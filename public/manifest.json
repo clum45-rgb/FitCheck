@@ -1,0 +1,13 @@
+{
+  "manifest_version": 3,
+  "name": "FitCheck",
+  "version": "0.1.0",
+  "description": "Blank Chrome extension",
+  "permissions": ["activeTab", "scripting"],
+  "action": {
+    "default_title": "FitCheck"
+  },
+  "background": {
+    "service_worker": "background/service-worker.js"
+  }
+}
