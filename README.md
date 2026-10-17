@@ -1,11 +1,15 @@
 # FitCheck
 DubHacks'26 project
 
-React and TypeScript Chrome extension. The interface is bundled into `dist/`.
+npm workspace with two apps:
+
+- `apps/extension` — Chrome extension
+- `apps/desktop` — desktop app
 
 ```bash
 npm install
-npm run dev
+npm run dev:extension
+npm run dev:desktop
 ```
 
-`npm run dev` rebuilds `dist/` as you edit. In Chrome, open `chrome://extensions`, turn on Developer mode, and load the `dist` folder. Reload the extension there after each rebuild. `npm run build` typechecks and writes a production bundle.
+Load the extension from `apps/extension/dist` on `chrome://extensions`. `npm run dev:extension` rebuilds that folder as you edit; reload the extension card after each rebuild. `npm run build` typechecks and builds both apps.

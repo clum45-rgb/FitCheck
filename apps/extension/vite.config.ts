@@ -1,6 +1,9 @@
 import { resolve } from "node:path";
+import { fileURLToPath } from "node:url";
 import { build, defineConfig, type Plugin } from "vite";
 import react from "@vitejs/plugin-react";
+
+const appRoot = fileURLToPath(new URL(".", import.meta.url));
 
 function emitServiceWorker(): Plugin {
   let emitting = false;
@@ -13,12 +16,13 @@ function emitServiceWorker(): Plugin {
       try {
         await build({
           configFile: false,
+          root: appRoot,
           logLevel: "warn",
           build: {
             emptyOutDir: false,
-            outDir: "dist",
+            outDir: resolve(appRoot, "dist"),
             lib: {
-              entry: resolve("src/background/service-worker.ts"),
+              entry: resolve(appRoot, "src/background/service-worker.ts"),
               formats: ["iife"],
               name: "FitCheckBackground",
               fileName: () => "background/service-worker.js",
@@ -39,14 +43,15 @@ function emitServiceWorker(): Plugin {
 }
 
 export default defineConfig({
+  root: appRoot,
   plugins: [react(), emitServiceWorker()],
   build: {
-    outDir: "dist",
+    outDir: resolve(appRoot, "dist"),
     emptyOutDir: true,
     modulePreload: false,
     cssCodeSplit: false,
     rollupOptions: {
-      input: resolve("src/content/sidebar.tsx"),
+      input: resolve(appRoot, "src/content/sidebar.tsx"),
       output: {
         format: "iife",
         inlineDynamicImports: true,
