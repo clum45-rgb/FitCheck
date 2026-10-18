@@ -4,6 +4,7 @@ import { normalizeProduct } from "@/lib/parse";
 import { ruleTag } from "@/lib/ruleTag";
 import { tagProducts } from "@/lib/llmTag";
 import { getCachedTags, saveProducts } from "@/lib/cache";
+import { embedTagBatch } from "@/lib/embed";
 import type { ScanRequest, TaggedProduct } from "@/lib/types";
 
 // Temporary stand-in until the recommender selects matches. Remove this cap then.
@@ -39,7 +40,8 @@ export async function POST(req: NextRequest) {
     }));
 
     const newlyTagged = taggedProducts.filter((p) => !cachedTags.has(p.id));
-    await saveProducts(storeDomain, newlyTagged);
+    const embeddings = await embedTagBatch(newlyTagged.map((product) => product.styleTags));
+    await saveProducts(storeDomain, newlyTagged, embeddings);
 
     return NextResponse.json({
       storeDomain,

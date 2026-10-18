@@ -5,6 +5,7 @@ create table if not exists scanned_products (
   vocab_version  integer not null,
   product        jsonb not null,
   tags           jsonb not null,
+  embedding      jsonb,
   created_at     timestamptz not null default now(),
   primary key (store_domain, product_id)
 );

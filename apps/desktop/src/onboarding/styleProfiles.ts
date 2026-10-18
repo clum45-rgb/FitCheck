@@ -14,6 +14,7 @@ import {
 } from "../style-profile";
 
 const PROFILE_METADATA_KEY = "__fitcheck";
+const profileEmbeddingUrl = "http://localhost:3000/api/profile-embedding";
 
 export type ProfilePreferenceState = {
   version: 1;
@@ -23,6 +24,8 @@ export type ProfilePreferenceState = {
   aiTags: ProfileTags;
   lastAnalysisSignature: string | null;
 };
+
+const profileEmbeddingUrl = "http://localhost:3000/api/profile-embedding";
 
 export type ConfirmedStyleProfile = {
   aesthetic: string;
@@ -234,12 +237,34 @@ function createStyleProfileRepository(userId: string): StyleProfileRepository {
   };
 }
 
+async function storeProfileEmbedding() {
+  if (!supabase) throw new Error("Supabase is not configured.");
+  const { data: { session }, error } = await supabase.auth.getSession();
+  if (error || !session) throw new Error(error?.message ?? "Sign in again to save your style profile.");
+
+  let response: Response;
+  try {
+    response = await fetch(profileEmbeddingUrl, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${session.access_token}` },
+    });
+  } catch {
+    throw new Error("Your style profile was saved, but its match vector could not be stored.");
+  }
+
+  if (!response.ok) {
+    const body = (await response.json().catch(() => null)) as { error?: string } | null;
+    throw new Error(body?.error ?? "Your style profile was saved, but its match vector could not be stored.");
+  }
+}
+
 export async function saveConfirmedStyleProfile(aesthetic: string, keywords: unknown, preferenceState?: ProfilePreferenceState) {
   if (!supabase) throw new Error("Supabase is not configured.");
   const { data: { user }, error } = await supabase.auth.getUser();
   if (error || !user) throw new Error(error?.message ?? "Sign in again to save your style profile.");
 
   await persistConfirmedStyleProfile(createStyleProfileRepository(user.id), aesthetic, keywords, preferenceState);
+  await storeProfileEmbedding();
 }
 
 export async function updateSavedStyleProfile(aesthetic: string, keywords: unknown, preferenceState?: ProfilePreferenceState, confirm = true) {
@@ -248,6 +273,7 @@ export async function updateSavedStyleProfile(aesthetic: string, keywords: unkno
   if (error || !user) throw new Error(error?.message ?? "Sign in again to save your style profile.");
 
   await persistEditedStyleProfile(createStyleProfileRepository(user.id), aesthetic, keywords, preferenceState, confirm);
+  await storeProfileEmbedding();
 }
 
 export async function getConfirmedStyleProfile(): Promise<ConfirmedStyleProfile | null> {

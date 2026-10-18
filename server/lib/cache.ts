@@ -45,16 +45,21 @@ export async function getCachedTags(
   return result;
 }
 
-export async function saveProducts(storeDomain: string, products: TaggedProduct[]): Promise<void> {
+export async function saveProducts(
+  storeDomain: string,
+  products: TaggedProduct[],
+  embeddings: number[][] = [],
+): Promise<void> {
   if (products.length === 0) return;
 
-  const rows = products.map((p) => ({
+  const rows = products.map((p, index) => ({
     store_domain: storeDomain,
     product_id: p.id,
     updated_at: p.updatedAt,
     vocab_version: VOCAB_VERSION,
     product: p,
     tags: p.styleTags,
+    ...(embeddings[index] ? { embedding: embeddings[index] } : {}),
   }));
 
   const { error } = await getSupabaseAdmin()
