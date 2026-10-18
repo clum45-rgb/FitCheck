@@ -131,10 +131,6 @@ function SignedInApp() {
     }
   }
 
-  function handleView(match: Match) {
-    void navigateCurrentTab(match.url);
-  }
-
   function goToIndex(index: number) {
     const clamped = Math.max(0, Math.min(matches.length - 1, index));
     setCurrentIndex(clamped);
@@ -182,7 +178,7 @@ function SignedInApp() {
                       product={match}
                       approved={isApproved(match.productId)}
                       highlighted={index === currentIndex}
-                      onView={() => handleView(match)}
+                      onView={() => goToIndex(index)}
                       onApprove={() => {
                         void handleApprove(match);
                       }}
