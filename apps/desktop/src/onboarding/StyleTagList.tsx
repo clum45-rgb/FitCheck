@@ -1,7 +1,7 @@
 import { useState, type FormEvent } from "react";
 import { MAX_PROFILE_TAG_LENGTH, MAX_PROFILE_TAGS_PER_CATEGORY, STYLE_TAG_FIELDS, normalizeProfileTagKey, type ProfileTags, type StyleTagField } from "../style-profile";
 
-const labels: Record<StyleTagField, string> = {
+export const styleTagFieldLabels: Record<StyleTagField, string> = {
   category: "Category",
   fit: "Fit",
   color: "Color",
@@ -13,6 +13,7 @@ type StyleTagListProps = {
   tags: ProfileTags;
   onRemove?: (field: StyleTagField, value: string) => void;
   onAdd?: (field: StyleTagField, value: string) => string | null;
+  onRequestAdd?: (field: StyleTagField) => void;
   onKeep?: (field: StyleTagField, value: string) => void;
   aiTags?: ProfileTags;
   manualTags?: ProfileTags;
@@ -20,7 +21,7 @@ type StyleTagListProps = {
   disabled?: boolean;
 };
 
-export function StyleTagList({ tags, onRemove, onAdd, onKeep, aiTags, manualTags, keptTags, disabled = false }: StyleTagListProps) {
+export function StyleTagList({ tags, onRemove, onAdd, onRequestAdd, onKeep, aiTags, manualTags, keptTags, disabled = false }: StyleTagListProps) {
   const [draftValues, setDraftValues] = useState<Partial<Record<StyleTagField, string>>>({});
   const [errors, setErrors] = useState<Partial<Record<StyleTagField, string>>>({});
 
@@ -35,8 +36,22 @@ export function StyleTagList({ tags, onRemove, onAdd, onKeep, aiTags, manualTags
   return (
     <div className="tag-groups">
       {STYLE_TAG_FIELDS.map((field) => (
-        <section key={field} aria-label={labels[field]}>
-          <div className="keyword-title"><span>{labels[field]}</span>{(onAdd || onRemove) && <span>{tags[field].length} / {MAX_PROFILE_TAGS_PER_CATEGORY}</span>}</div>
+        <section key={field} aria-label={styleTagFieldLabels[field]}>
+          <div className="keyword-title">
+            <span className="keyword-label">
+              {styleTagFieldLabels[field]}
+              {onRequestAdd && (
+                <button
+                  type="button"
+                  className="add-category-tag"
+                  aria-label={`Add ${styleTagFieldLabels[field].toLowerCase()} tag`}
+                  disabled={disabled || tags[field].length >= MAX_PROFILE_TAGS_PER_CATEGORY}
+                  onClick={() => onRequestAdd(field)}
+                >+</button>
+              )}
+            </span>
+            {(onAdd || onRemove) && <span>{tags[field].length} / {MAX_PROFILE_TAGS_PER_CATEGORY}</span>}
+          </div>
           {tags[field].length === 0 ? <p className="keyword-empty">None selected.</p> : (
             <ul className="keyword-list">
               {tags[field].map((value) => (
@@ -57,7 +72,7 @@ export function StyleTagList({ tags, onRemove, onAdd, onKeep, aiTags, manualTags
                       </button>
                     )}
                   {onRemove && (
-                    <button type="button" aria-label={`Remove ${value}`} disabled={disabled} onClick={() => onRemove(field, value)}>×</button>
+                    <button type="button" className="remove-tag-button" aria-label={`Remove ${value}`} disabled={disabled} onClick={() => onRemove(field, value)}>×</button>
                   )}
                 </li>
               ))}
@@ -65,16 +80,16 @@ export function StyleTagList({ tags, onRemove, onAdd, onKeep, aiTags, manualTags
           )}
           {onAdd && (
             <form className="profile-tag-entry" onSubmit={(event) => submitTag(event, field)}>
-              <label className="visually-hidden" htmlFor={`profile-tag-${field}`}>Add {labels[field].toLowerCase()} tag</label>
+              <label className="visually-hidden" htmlFor={`profile-tag-${field}`}>Add {styleTagFieldLabels[field].toLowerCase()} tag</label>
               <input
                 id={`profile-tag-${field}`}
                 value={draftValues[field] ?? ""}
                 maxLength={MAX_PROFILE_TAG_LENGTH}
                 disabled={disabled || tags[field].length >= MAX_PROFILE_TAGS_PER_CATEGORY}
-                placeholder={`Add ${labels[field].toLowerCase()}`}
+                placeholder={`Add ${styleTagFieldLabels[field].toLowerCase()}`}
                 onChange={(event) => setDraftValues((current) => ({ ...current, [field]: event.target.value }))}
               />
-              <button type="submit" className="secondary-button" disabled={disabled || tags[field].length >= MAX_PROFILE_TAGS_PER_CATEGORY} aria-label={`Add ${labels[field].toLowerCase()} tag`}>Add <span aria-hidden="true">+</span></button>
+              <button type="submit" className="secondary-button" disabled={disabled || tags[field].length >= MAX_PROFILE_TAGS_PER_CATEGORY} aria-label={`Add ${styleTagFieldLabels[field].toLowerCase()} tag`}>Add <span aria-hidden="true">+</span></button>
               {errors[field] && <p className="tag-entry-error" role="alert">{errors[field]}</p>}
             </form>
           )}

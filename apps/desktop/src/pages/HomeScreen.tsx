@@ -1,8 +1,8 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState, type FormEvent } from "react";
 import { PhotoLibrary } from "../onboarding/PhotoLibrary.tsx";
 import { analyzeStylePhotos } from "../onboarding/styleAnalysis";
 import { getUserPhotoMetadata } from "../onboarding/photoLibraryApi";
-import { StyleTagList } from "../onboarding/StyleTagList";
+import { StyleTagList, styleTagFieldLabels } from "../onboarding/StyleTagList";
 import {
   getConfirmedStyleProfile,
   mergeProfileTags,
@@ -14,11 +14,11 @@ import {
   type ProfilePreferenceState,
 } from "../onboarding/styleProfiles";
 import {
+  MAX_PROFILE_TAG_LENGTH,
   STYLE_TAG_FIELDS,
   addProfileTag,
   coerceProfileTags,
   emptyProfileTags,
-  normalizeProfileTagKey,
   profileTagCount,
   withoutProfileTag,
   type ProfileTags,
@@ -37,39 +37,45 @@ function sameTags(left: ProfileTags, right: ProfileTags) {
   return STYLE_TAG_FIELDS.every((field) => JSON.stringify(left[field]) === JSON.stringify(right[field]));
 }
 
-function samePreferenceDecisions(left: ProfilePreferenceState, right: ProfilePreferenceState) {
-  return sameTags(left.manualTags, right.manualTags)
-    && sameTags(left.keptTags, right.keptTags)
-    && sameTags(left.dismissedTags, right.dismissedTags);
-}
-
-function includesTag(tags: ProfileTags, field: StyleTagField, value: string) {
-  return tags[field].some((tag) => normalizeProfileTagKey(tag) === normalizeProfileTagKey(value));
+function analyzedPhotoPaths(signature: string | null): string[] | null {
+  if (!signature) return null;
+  try {
+    const parsed = JSON.parse(signature) as { photoPaths?: unknown };
+    if (!Array.isArray(parsed.photoPaths) || parsed.photoPaths.some((path) => typeof path !== "string")) return null;
+    return [...parsed.photoPaths].sort();
+  } catch {
+    return null;
+  }
 }
 
 export function HomeScreen({ onCompleteSetup }: HomeScreenProps) {
   const [styleProfile, setStyleProfile] = useState<ConfirmedStyleProfile | null>(null);
-  const [isEditing, setIsEditing] = useState(false);
-  const [draftKeywords, setDraftKeywords] = useState<ProfileTags>(emptyProfileTags);
-  const [draftPreferenceState, setDraftPreferenceState] = useState<ProfilePreferenceState | null>(null);
+  const [tagEditorOpen, setTagEditorOpen] = useState(false);
+  const [draftKeywords, setDraftKeywords] = useState<ProfileTags | null>(null);
+  const [draftPreference, setDraftPreference] = useState<ProfilePreferenceState | null>(null);
+  const [addingField, setAddingField] = useState<StyleTagField | null>(null);
+  const [confirmLeave, setConfirmLeave] = useState(false);
+  const [addValue, setAddValue] = useState("");
+  const [addError, setAddError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [saveError, setSaveError] = useState<string | null>(null);
-  const [saveNotice, setSaveNotice] = useState<string | null>(null);
   const [refreshing, setRefreshing] = useState(false);
   const [refreshError, setRefreshError] = useState<string | null>(null);
   const [refreshNotice, setRefreshNotice] = useState<string | null>(null);
+  const [photoPaths, setPhotoPaths] = useState<string[] | null>(null);
+  const handlePhotosChange = useCallback((paths: string[]) => setPhotoPaths(paths), []);
   const refreshLock = useRef(false);
+  const profileRef = useRef<ConfirmedStyleProfile | null>(null);
+  const cancelRef = useRef<() => void>(() => {});
+  profileRef.current = styleProfile;
 
   async function loadStyleProfile() {
     setLoading(true);
     setError(null);
     try {
-      const savedProfile = await getConfirmedStyleProfile();
-      setStyleProfile(savedProfile);
-      setDraftKeywords(savedProfile?.keywords ?? emptyProfileTags());
-      setDraftPreferenceState(savedProfile?.preferenceState ?? null);
+      setStyleProfile(await getConfirmedStyleProfile());
     } catch (loadError) {
       setError(loadError instanceof Error ? loadError.message : "Could not load your style profile.");
     } finally {
@@ -81,109 +87,125 @@ export function HomeScreen({ onCompleteSetup }: HomeScreenProps) {
     void loadStyleProfile();
   }, []);
 
-  function startEditing() {
+  function openTagEditor() {
     if (!styleProfile) return;
     setDraftKeywords(styleProfile.keywords);
-    setDraftPreferenceState(styleProfile.preferenceState);
+    setDraftPreference(styleProfile.preferenceState);
+    setAddingField(null);
+    setAddValue("");
+    setAddError(null);
     setSaveError(null);
-    setSaveNotice(null);
-    setRefreshError(null);
-    setIsEditing(true);
+    setConfirmLeave(false);
+    setTagEditorOpen(true);
   }
 
-  const hasUnsavedChanges = isEditing && Boolean(styleProfile) && (
-    !sameTags(draftKeywords, styleProfile?.keywords ?? emptyProfileTags())
-    || Boolean(draftPreferenceState && styleProfile && !samePreferenceDecisions(draftPreferenceState, styleProfile.preferenceState))
-  );
-
-  function cancelEditing() {
-    if (hasUnsavedChanges && !window.confirm("Discard your unsaved style changes?")) return;
-    setDraftKeywords(styleProfile?.keywords ?? emptyProfileTags());
-    setDraftPreferenceState(styleProfile?.preferenceState ?? null);
-    setSaveError(null);
-    setRefreshError(null);
-    setIsEditing(false);
+  function discardTagEditor() {
+    setAddingField(null);
+    setConfirmLeave(false);
+    setTagEditorOpen(false);
   }
 
-  function addTag(field: StyleTagField, value: string) {
-    const result = addProfileTag(draftKeywords, field, value);
-    if (result.error) return result.error;
+  function removeDraftTag(field: StyleTagField, value: string) {
+    if (!draftKeywords || !draftPreference) return;
+    const nextKeywords = withoutProfileTag(draftKeywords, field, value);
+    if (profileTagCount(nextKeywords) === 0) {
+      setSaveError("Keep at least one style tag.");
+      return;
+    }
+    setSaveError(null);
+    setDraftKeywords(nextKeywords);
+    setDraftPreference({
+      ...draftPreference,
+      manualTags: withoutProfileTag(draftPreference.manualTags, field, value),
+      keptTags: withoutProfileTag(draftPreference.keptTags, field, value),
+      dismissedTags: mergeProfileTags(draftPreference.dismissedTags, oneTag(field, value)),
+    });
+  }
+
+  function openAddTag(field: StyleTagField) {
+    setAddingField(field);
+    setAddValue("");
+    setAddError(null);
+  }
+
+  function submitAddTag(event: FormEvent) {
+    event.preventDefault();
+    if (!addingField || !draftKeywords || !draftPreference) return;
+    const result = addProfileTag(draftKeywords, addingField, addValue);
+    if (result.error) {
+      setAddError(result.error);
+      return;
+    }
     setDraftKeywords(result.tags);
-    setDraftPreferenceState((current) => current ? {
-      ...current,
-      manualTags: mergeProfileTags(current.manualTags, oneTag(field, value)),
-      dismissedTags: withoutProfileTag(current.dismissedTags, field, value),
-    } : current);
-    return null;
+    setDraftPreference({
+      ...draftPreference,
+      manualTags: mergeProfileTags(draftPreference.manualTags, oneTag(addingField, addValue.trim())),
+      dismissedTags: withoutProfileTag(draftPreference.dismissedTags, addingField, addValue.trim()),
+    });
+    setSaveError(null);
+    setAddingField(null);
+    setAddValue("");
+    setAddError(null);
   }
 
-  function removeTag(field: StyleTagField, value: string) {
-    setDraftKeywords((current) => withoutProfileTag(current, field, value));
-    setDraftPreferenceState((current) => current ? {
-      ...current,
-      manualTags: withoutProfileTag(current.manualTags, field, value),
-      keptTags: withoutProfileTag(current.keptTags, field, value),
-      dismissedTags: mergeProfileTags(current.dismissedTags, oneTag(field, value)),
-    } : current);
-  }
-
-  function keepTag(field: StyleTagField, value: string) {
-    setDraftPreferenceState((current) => current ? {
-      ...current,
-      keptTags: includesTag(current.keptTags, field, value)
-        ? withoutProfileTag(current.keptTags, field, value)
-        : mergeProfileTags(current.keptTags, oneTag(field, value)),
-    } : current);
-  }
-
-  async function saveChanges() {
-    if (!styleProfile || !draftPreferenceState) return;
+  async function saveTagChanges() {
+    const current = profileRef.current;
+    if (!current || !draftKeywords || !draftPreference || saving) return false;
+    if (profileTagCount(draftKeywords) === 0) {
+      setSaveError("Keep at least one style tag.");
+      return false;
+    }
     setSaving(true);
     setSaveError(null);
-    setSaveNotice(null);
     try {
-      const tagsChanged = !sameTags(draftKeywords, styleProfile.keywords);
-      const preferenceChanged = !samePreferenceDecisions(draftPreferenceState, styleProfile.preferenceState);
-      if (!tagsChanged && !preferenceChanged) {
-        setSaveNotice("No changes made — profile saved.");
-        setIsEditing(false);
-        return;
-      }
-
-      if (tagsChanged) {
-        const normalized = normalizeStyleProfile(styleProfile.aesthetic, draftKeywords);
-        const nextPreferenceState = { ...draftPreferenceState };
-        await updateSavedStyleProfile(normalized.aesthetic, normalized.keywords, nextPreferenceState);
-        setStyleProfile({
-          ...styleProfile,
-          aesthetic: normalized.aesthetic,
-          keywords: normalized.keywords,
-          preferenceState: nextPreferenceState,
-          confirmed_at: new Date().toISOString(),
-        });
-        setDraftPreferenceState(nextPreferenceState);
-      } else if (preferenceChanged) {
-        const nextPreferenceState = { ...draftPreferenceState };
-        await updateSavedStyleProfile(styleProfile.aesthetic, styleProfile.keywords, nextPreferenceState, false);
-        setStyleProfile((current) => current ? { ...current, preferenceState: nextPreferenceState } : current);
-        setDraftPreferenceState(nextPreferenceState);
-      }
-      setSaveNotice("Your style profile is saved.");
-      setIsEditing(false);
+      const normalized = normalizeStyleProfile(current.aesthetic, draftKeywords);
+      await updateSavedStyleProfile(normalized.aesthetic, normalized.keywords, draftPreference);
+      const nextProfile = {
+        ...current,
+        aesthetic: normalized.aesthetic,
+        keywords: normalized.keywords,
+        preferenceState: draftPreference,
+        confirmed_at: new Date().toISOString(),
+      };
+      profileRef.current = nextProfile;
+      setStyleProfile(nextProfile);
+      discardTagEditor();
+      return true;
     } catch (saveFailure) {
-      setSaveError(saveFailure instanceof Error ? saveFailure.message : "Could not save your style changes.");
+      setSaveError(saveFailure instanceof Error ? saveFailure.message : "Could not save your tags.");
+      return false;
     } finally {
       setSaving(false);
     }
   }
 
-  async function startRefresh() {
-    if (!styleProfile || refreshLock.current) return;
-    if (hasUnsavedChanges) {
-      setRefreshError("Save your profile edits before refreshing preferences.");
+  const tagsChanged = Boolean(styleProfile && draftKeywords && !sameTags(draftKeywords, styleProfile.keywords));
+
+  function cancelTagEditor() {
+    if (saving) return;
+    if (tagsChanged) {
+      setConfirmLeave(true);
       return;
     }
-    if (!window.confirm("Refresh Profile Preferences will reanalyze your current saved inspiration photos and update the AI-generated aesthetic and tags. Your manually added, kept, and dismissed tags will be respected. Continue?")) return;
+    discardTagEditor();
+  }
+
+  cancelRef.current = () => {
+    if (addingField) {
+      setAddingField(null);
+      setAddError(null);
+      return;
+    }
+    if (confirmLeave) {
+      setConfirmLeave(false);
+      return;
+    }
+    cancelTagEditor();
+  };
+
+  async function startRefresh() {
+    if (!styleProfile || refreshLock.current) return;
+    if (!window.confirm("Reanalyze Profile will look at your current inspiration photos and update the AI-generated aesthetic and tags. Continue?")) return;
 
     refreshLock.current = true;
     setRefreshing(true);
@@ -216,12 +238,11 @@ export function HomeScreen({ onCompleteSetup }: HomeScreenProps) {
         preferenceState: nextPreferenceState,
         confirmed_at: new Date().toISOString(),
       };
+      profileRef.current = nextProfile;
       setStyleProfile(nextProfile);
-      setDraftKeywords(nextProfile.keywords);
-      setDraftPreferenceState(nextPreferenceState);
       setRefreshNotice("Your updated style preferences are saved.");
     } catch (refreshFailure) {
-      setRefreshError(refreshFailure instanceof Error ? refreshFailure.message : "Could not refresh profile preferences.");
+      setRefreshError(refreshFailure instanceof Error ? refreshFailure.message : "Could not reanalyze your profile.");
     } finally {
       refreshLock.current = false;
       setRefreshing(false);
@@ -229,14 +250,20 @@ export function HomeScreen({ onCompleteSetup }: HomeScreenProps) {
   }
 
   useEffect(() => {
-    if (!hasUnsavedChanges) return;
-    const warnBeforeLeaving = (event: BeforeUnloadEvent) => {
-      event.preventDefault();
-      event.returnValue = "";
+    if (!tagEditorOpen) return;
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === "Escape") cancelRef.current();
     };
-    window.addEventListener("beforeunload", warnBeforeLeaving);
-    return () => window.removeEventListener("beforeunload", warnBeforeLeaving);
-  }, [hasUnsavedChanges]);
+    window.addEventListener("keydown", closeOnEscape);
+    return () => window.removeEventListener("keydown", closeOnEscape);
+  }, [tagEditorOpen]);
+
+  const analyzedPaths = analyzedPhotoPaths(styleProfile?.preferenceState.lastAnalysisSignature ?? null);
+  const photosChanged = photoPaths !== null && (
+    analyzedPaths === null
+      ? photoPaths.length > 0
+      : JSON.stringify(photoPaths) !== JSON.stringify(analyzedPaths)
+  );
 
   return (
     <main className="progress-screen">
@@ -256,28 +283,6 @@ export function HomeScreen({ onCompleteSetup }: HomeScreenProps) {
         <div className="profile-main">
         {loading ? <p className="flow-status" role="status">Loading your saved style profile...</p> : error ? (
           <div className="home-error"><p role="alert">{error}</p><button className="text-button" type="button" onClick={() => void loadStyleProfile()}>Try again</button></div>
-        ) : styleProfile && isEditing ? (
-          <section className="profile-editor" aria-label="Edit style profile">
-            <div className="aesthetic-summary"><span className="eyebrow">Aesthetic</span><div className="aesthetic-box"><strong title={styleProfile.aesthetic}>{styleProfile.aesthetic}</strong></div></div>
-            <div className="keyword-section style-tags">
-              <div className="keyword-title"><span>Style tags</span></div>
-              <StyleTagList
-                tags={draftKeywords}
-                aiTags={draftPreferenceState?.aiTags}
-                manualTags={draftPreferenceState?.manualTags}
-                keptTags={draftPreferenceState?.keptTags}
-                disabled={saving || refreshing}
-                onRemove={removeTag}
-                onAdd={addTag}
-                onKeep={keepTag}
-              />
-            </div>
-            {saveError && <p className="flow-error" role="alert">{saveError}</p>}
-            <div className="review-bottom editor-actions">
-              <button type="button" className="text-button" disabled={saving || refreshing} onClick={cancelEditing}>Cancel</button>
-              <button type="button" className="primary-button" disabled={saving || refreshing || profileTagCount(draftKeywords) === 0} onClick={() => void saveChanges()}>{saving ? "Saving changes..." : "Save Changes"}<span aria-hidden="true">↗</span></button>
-            </div>
-          </section>
         ) : styleProfile ? (
           <section className="saved-style" aria-label="Confirmed style profile">
             <p className="eyebrow">Aesthetic</p>
@@ -287,7 +292,7 @@ export function HomeScreen({ onCompleteSetup }: HomeScreenProps) {
             <div className="style-tags">
               <div className="keyword-title saved-keyword-title style-tags-heading">
                 <span>Style tags</span>
-                <button className="secondary-button profile-action" type="button" onClick={startEditing}>Edit tags <span aria-hidden="true"><svg viewBox="0 0 24 24" width="15" height="15"><path fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" d="M12 20h9M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z" /></svg></span></button>
+                <button className="secondary-button profile-action" type="button" onClick={openTagEditor}>Edit tags <span aria-hidden="true"><svg viewBox="0 0 24 24" width="15" height="15"><path fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" d="M12 20h9M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z" /></svg></span></button>
               </div>
               <StyleTagList tags={styleProfile.keywords} />
             </div>
@@ -301,22 +306,59 @@ export function HomeScreen({ onCompleteSetup }: HomeScreenProps) {
           </section>
         )}
 
-        {saveNotice && <p className="flow-status" role="status">{saveNotice}</p>}
         <div className="refresh-preferences refresh-preferences-after-photos">
           <div>
-            <h2>Refresh Profile Preferences</h2>
-            <p>Reanalyze your current saved inspiration photos to update the AI-generated aesthetic and tags. Manually added, kept, and dismissed tags are respected.</p>
+            <h2>Reanalyze Profile</h2>
+            <p>Reanalyze your current saved inspiration photos to update the AI-generated aesthetic and tags.</p>
           </div>
-          {hasUnsavedChanges && <p className="limit-message">Save profile edits before refreshing preferences.</p>}
           {refreshNotice && <p className="flow-status" role="status">{refreshNotice}</p>}
           {refreshError && <p className="flow-error" role="alert">{refreshError}</p>}
-          <button type="button" className="secondary-button profile-action" disabled={!styleProfile || loading || saving || refreshing || hasUnsavedChanges} onClick={() => void startRefresh()}>
-            {refreshing ? "Refreshing preferences..." : "Refresh Profile Preferences"}<span aria-hidden="true">↻</span>
+          <button type="button" className={`secondary-button profile-action${photosChanged ? "" : " is-idle"}${refreshing ? " is-reanalyzing" : ""}`} disabled={!photosChanged || !styleProfile || loading || saving || refreshing} onClick={() => void startRefresh()}>
+            {refreshing ? <span className="button-spinner" role="status" aria-label="Reanalyzing profile" /> : "Reanalyze Profile"}
           </button>
         </div>
         </div>
-        <PhotoLibrary compact />
+        <PhotoLibrary compact onPhotosChange={handlePhotosChange} />
         </div>
+        {tagEditorOpen && styleProfile && draftKeywords && (
+          <div className="tag-modal-backdrop" onClick={(event) => { if (event.target === event.currentTarget) cancelTagEditor(); }}>
+            <div className="tag-modal" role="dialog" aria-modal="true" aria-labelledby="tag-editor-title">
+              <h2 id="tag-editor-title">Edit tags</h2>
+              {saveError && <p className="flow-error" role="alert">{saveError}</p>}
+              <div className="style-tags">
+                <StyleTagList tags={draftKeywords} disabled={saving} onRemove={removeDraftTag} onRequestAdd={openAddTag} />
+              </div>
+              {confirmLeave ? (
+                <div className="tag-leave-prompt" role="group" aria-label="Leave without saving?">
+                  <p>Leave without saving?</p>
+                  <div className="tag-modal-actions">
+                    <button type="button" className="text-button" onClick={() => setConfirmLeave(false)}>No</button>
+                    <button type="button" className="tag-modal-save" onClick={discardTagEditor}>Yes</button>
+                  </div>
+                </div>
+              ) : (
+                <div className="tag-modal-actions">
+                  <button type="button" className="text-button" disabled={saving} onClick={cancelTagEditor}>Cancel</button>
+                  <button type="button" className="tag-modal-save" disabled={!tagsChanged || saving} onClick={() => void saveTagChanges()}>{saving ? "Saving..." : "Save"}</button>
+                </div>
+              )}
+              {addingField && (
+                <div className="tag-add-backdrop" onClick={(event) => { if (event.target === event.currentTarget) setAddingField(null); }}>
+                  <form className="tag-add-popup" onSubmit={submitAddTag}>
+                    <h3>Add a {styleTagFieldLabels[addingField].toLowerCase()} tag</h3>
+                    <label className="visually-hidden" htmlFor="custom-tag-input">Custom {styleTagFieldLabels[addingField].toLowerCase()} tag</label>
+                    <input id="custom-tag-input" autoFocus value={addValue} maxLength={MAX_PROFILE_TAG_LENGTH} placeholder={`Type a ${styleTagFieldLabels[addingField].toLowerCase()}`} onChange={(event) => setAddValue(event.target.value)} />
+                    {addError && <p className="flow-error" role="alert">{addError}</p>}
+                    <div className="tag-modal-actions">
+                      <button type="button" className="text-button" onClick={() => setAddingField(null)}>Cancel</button>
+                      <button type="submit" className="tag-modal-save" disabled={addValue.trim().length === 0}>Add</button>
+                    </div>
+                  </form>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
       </section>
     </main>
   );

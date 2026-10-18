@@ -5,6 +5,7 @@ import { createSignedPhotoUrl, deleteUserPhoto, getUserPhotoGallery, type UserPh
 
 type PhotoLibraryProps = {
   compact?: boolean;
+  onPhotosChange?: (storagePaths: string[]) => void;
 };
 
 type SelectedPhoto = {
@@ -13,7 +14,7 @@ type SelectedPhoto = {
   previewUrl: string;
 };
 
-export function PhotoLibrary({ compact = false }: PhotoLibraryProps) {
+export function PhotoLibrary({ compact = false, onPhotosChange }: PhotoLibraryProps) {
   const [photos, setPhotos] = useState<UserPhoto[]>([]);
   const [selected, setSelected] = useState<SelectedPhoto[]>([]);
   const [photoCount, setPhotoCount] = useState(0);
@@ -41,6 +42,7 @@ export function PhotoLibrary({ compact = false }: PhotoLibraryProps) {
       setPhotoCount(count);
       setCountIsCurrent(true);
       setUrlFailures([]);
+      onPhotosChange?.(nextPhotos.map((photo) => photo.storage_path).sort());
       return true;
     } catch (loadError) {
       const message = loadError instanceof Error ? loadError.message : "Could not load your saved photos.";
@@ -49,7 +51,7 @@ export function PhotoLibrary({ compact = false }: PhotoLibraryProps) {
     } finally {
       setLoading(false);
     }
-  }, [photoCount]);
+  }, [onPhotosChange, photoCount]);
 
   useEffect(() => {
     void refresh();
