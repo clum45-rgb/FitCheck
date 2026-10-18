@@ -6,7 +6,11 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc --noEmit && vite build",
-    "test": "vitest run"
+    "test": "vitest run",
+    "check:style-profile": "node scripts/check-style-profile.ts",
+    "analyze:style": "node scripts/analyze-style.ts",
+    "list:style-photos": "node scripts/list-style-photos.ts",
+    "confirm:style": "node scripts/confirm-style.ts"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.57.4",
