@@ -1,5 +1,6 @@
 import { readFileSync } from "node:fs";
 import { extname, resolve } from "node:path";
+import { normalizeStylePhotoPath, selectOwnedPhotoPaths } from "../src/style-photo-paths.ts";
 
 export const stylePhotoBucket = "style-photos";
 
@@ -58,10 +59,7 @@ export function requireSupabase() {
 }
 
 function objectPath(storagePath: string) {
-  const marker = `/${stylePhotoBucket}/`;
-  const markerIndex = storagePath.indexOf(marker);
-  const path = markerIndex === -1 ? storagePath : storagePath.slice(markerIndex + marker.length);
-  return path.replace(new RegExp(`^${stylePhotoBucket}/`), "").replace(/^\//, "");
+  return normalizeStylePhotoPath(storagePath);
 }
 
 export function assertUserId(userId: string | undefined) {
@@ -94,9 +92,10 @@ export async function listStylePhotoPaths(userId: string) {
   return body.flatMap((row) => (row.storage_path ? [objectPath(row.storage_path)] : []));
 }
 
-export async function downloadStylePhotos(userId: string): Promise<StylePhoto[]> {
+export async function downloadStylePhotos(userId: string, requestedPaths?: string[]): Promise<StylePhoto[]> {
   const { supabaseUrl, serviceRoleKey } = requireSupabase();
-  const paths = await listStylePhotoPaths(userId);
+  const storedPaths = await listStylePhotoPaths(userId);
+  const paths = requestedPaths ? selectOwnedPhotoPaths(userId, storedPaths, requestedPaths) : storedPaths;
   const photos: StylePhoto[] = [];
 
   for (const path of paths) {
