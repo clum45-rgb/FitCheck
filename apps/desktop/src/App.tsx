@@ -8,9 +8,25 @@ import { CartScreen } from "./pages/CartScreen";
 import { HomeScreen } from "./pages/HomeScreen";
 
 export function App() {
-  const { configured, session, profile, loading, profileError, signIn, signUp, refreshProfile } = useAuth();
+  const { configured, session, profile, loading, profileError, signIn, signUp, signOut, refreshProfile } = useAuth();
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [tab, setTab] = useState<AppTab>("cart");
+  const [loggingOut, setLoggingOut] = useState(false);
+  const [logoutError, setLogoutError] = useState<string | null>(null);
+
+  async function handleLogout() {
+    if (loggingOut) return;
+    setLoggingOut(true);
+    setLogoutError(null);
+    try {
+      const result = await signOut();
+      if (result.error) setLogoutError(result.error);
+    } catch (error) {
+      setLogoutError(error instanceof Error ? error.message : "Could not log out.");
+    } finally {
+      setLoggingOut(false);
+    }
+  }
 
   if (!configured) {
     return (
@@ -29,10 +45,18 @@ export function App() {
   if (profileError) {
     return (
       <main className="message-screen">
-        <p className="eyebrow">Profile unavailable</p>
+        <p className="eyebrow">Account unavailable</p>
         <h1>We couldn't load your account.</h1>
         <p>{profileError}</p>
-        <button className="primary-button" type="button" onClick={() => void refreshProfile()}>Try again</button>
+        <div className="message-actions">
+          <button className="primary-button" type="button" disabled={loggingOut} onClick={() => void refreshProfile()}>
+            Try again
+          </button>
+          <button className="text-button" type="button" disabled={loggingOut} onClick={() => void handleLogout()}>
+            {loggingOut ? "Logging out..." : "Log out"}
+          </button>
+        </div>
+        {logoutError ? <p className="form-feedback form-error" role="alert">{logoutError}</p> : null}
       </main>
     );
   }

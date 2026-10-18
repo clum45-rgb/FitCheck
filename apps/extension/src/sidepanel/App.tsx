@@ -14,7 +14,23 @@ import { RecommendationsEmptyState } from "./components/RecommendationsEmptyStat
 import { SettingsPanel } from "./components/SettingsPanel";
 
 export function App() {
-  const { configured, session, loading, profileError, signIn, signUp, refreshProfile } = useAuth();
+  const { configured, session, loading, profileError, signIn, signUp, refreshProfile, signOut } = useAuth();
+  const [loggingOut, setLoggingOut] = useState(false);
+  const [logoutError, setLogoutError] = useState<string | null>(null);
+
+  async function handleLogout() {
+    if (loggingOut) return;
+    setLoggingOut(true);
+    setLogoutError(null);
+    try {
+      const result = await signOut();
+      if (result.error) setLogoutError(result.error);
+    } catch (error) {
+      setLogoutError(error instanceof Error ? error.message : "Could not log out.");
+    } finally {
+      setLoggingOut(false);
+    }
+  }
 
   if (!configured) {
     return (
@@ -53,9 +69,25 @@ export function App() {
             <p className="eyebrow">Account unavailable</p>
             <h2>We couldn't load your account.</h2>
             <p className="muted">{profileError}</p>
-            <button className="button button-primary" type="button" onClick={() => void refreshProfile()}>
-              Try again
-            </button>
+            <div className="account-actions">
+              <button
+                className="button button-primary"
+                type="button"
+                disabled={loggingOut}
+                onClick={() => void refreshProfile()}
+              >
+                Try again
+              </button>
+              <button
+                className="button button-secondary"
+                type="button"
+                disabled={loggingOut}
+                onClick={() => void handleLogout()}
+              >
+                {loggingOut ? "Logging out..." : "Log out"}
+              </button>
+            </div>
+            {logoutError ? <p className="settings-error" role="alert">{logoutError}</p> : null}
           </section>
         </main>
       </div>

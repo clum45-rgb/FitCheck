@@ -29,6 +29,7 @@ type AuthContextValue = {
   profileError: string | null;
   signIn: (email: string, password: string) => Promise<AuthActionResult>;
   signUp: (displayName: string, email: string, password: string) => Promise<AuthActionResult>;
+  signOut: () => Promise<AuthActionResult>;
   updateDisplayName: (displayName: string) => Promise<void>;
   refreshProfile: () => Promise<void>;
 };
@@ -156,6 +157,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     };
   }, []);
 
+  const signOut = useCallback(async (): Promise<AuthActionResult> => {
+    if (!supabase) return { error: "Supabase is not configured." };
+    const { error } = await supabase.auth.signOut();
+    return { error: error?.message ?? null };
+  }, []);
+
   const updateDisplayName = useCallback(async (displayName: string) => {
     if (!supabase || !session) throw new Error("Sign in again to update your profile.");
     const normalizedName = displayName.trim() || null;
@@ -190,9 +197,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     profileError,
     signIn,
     signUp,
+    signOut,
     updateDisplayName,
     refreshProfile,
-  }), [session, profile, loading, profileError, signIn, signUp, updateDisplayName, refreshProfile]);
+  }), [session, profile, loading, profileError, signIn, signUp, signOut, updateDisplayName, refreshProfile]);
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
