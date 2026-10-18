@@ -25,8 +25,6 @@ export type ProfilePreferenceState = {
   lastAnalysisSignature: string | null;
 };
 
-const profileEmbeddingUrl = "http://localhost:3000/api/profile-embedding";
-
 export type ConfirmedStyleProfile = {
   aesthetic: string;
   keywords: ProfileTags;
