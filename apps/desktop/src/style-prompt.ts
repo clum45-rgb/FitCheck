@@ -12,7 +12,7 @@ Follow these instructions:
 4. keywords.aesthetic may include every applicable vocabulary value. The aesthetic field is the profile title: combine those values into one short phrase of 20 characters or fewer, such as "Minimal workwear".
 5. Use specific, useful fashion terminology rather than vague descriptions like "trendy," "nice," or "fashionable."
 6. Use short, concise phrases instead of full sentences. Keep each phrase to 80 characters or fewer, and keep the aesthetic title to 20 characters or fewer.
-7. Include no more than 12 items in each descriptive list and no more than five items in each keywords category. Avoid duplicates and redundant synonyms.
+7. Include no more than 12 items in each descriptive list and no more than ten items in each keywords category. Avoid duplicates and redundant synonyms.
 8. If an attribute cannot be confidently determined from the images, leave that item out rather than guessing. Do not remove the field. Materials should be described only when visually identifiable.
 9. Do not include explanations, commentary, or any additional fields.
 

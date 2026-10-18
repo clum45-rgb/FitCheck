@@ -219,7 +219,7 @@ export function PhotoLibrary({ compact = false }: PhotoLibraryProps) {
       <div className="library-actions">
         {!countIsCurrent ? <p className="limit-message" role="status">Refresh your photo collection before adding images.</p> : remaining > 0 ? (
           <>
-            <label className="secondary-button" htmlFor={inputId}>Add photos <span aria-hidden="true">+</span></label>
+            <label className="secondary-button profile-action" htmlFor={inputId}>Add photos <span aria-hidden="true">+</span></label>
             <input id={inputId} className="visually-hidden" type="file" accept="image/jpeg,image/png,image/webp" multiple disabled={loading || validating || uploading || deletingId !== null || remaining <= 0} onChange={(event) => void handleSelection(event)} />
           </>
         ) : <p className="limit-message" role="status">Your photo collection is full. Remove a photo to add another.</p>}

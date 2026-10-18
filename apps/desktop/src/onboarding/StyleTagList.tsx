@@ -6,7 +6,7 @@ const labels: Record<StyleTagField, string> = {
   fit: "Fit",
   color: "Color",
   material: "Material",
-  aesthetic: "Aesthetic",
+  aesthetic: "Aesthetics",
 };
 
 type StyleTagListProps = {
@@ -36,7 +36,7 @@ export function StyleTagList({ tags, onRemove, onAdd, onKeep, aiTags, manualTags
     <div className="tag-groups">
       {STYLE_TAG_FIELDS.map((field) => (
         <section key={field} aria-label={labels[field]}>
-          <div className="keyword-title"><span>{labels[field]}</span><span>{tags[field].length} / {MAX_PROFILE_TAGS_PER_CATEGORY}</span></div>
+          <div className="keyword-title"><span>{labels[field]}</span>{(onAdd || onRemove) && <span>{tags[field].length} / {MAX_PROFILE_TAGS_PER_CATEGORY}</span>}</div>
           {tags[field].length === 0 ? <p className="keyword-empty">None selected.</p> : (
             <ul className="keyword-list">
               {tags[field].map((value) => (

@@ -1,6 +1,7 @@
 import { supabase } from "../lib/supabase";
 import {
   MAX_AESTHETIC_LENGTH,
+  MAX_PROFILE_TAGS_PER_CATEGORY,
   STYLE_TAG_FIELDS,
   STYLE_TAG_VOCAB,
   aestheticTitle,
@@ -119,7 +120,7 @@ export function mergeProfileTags(...groups: ProfileTags[]): ProfileTags {
     for (const field of STYLE_TAG_FIELDS) {
       for (const tag of group[field]) {
         if (merged[field].some((current) => normalizeProfileTagKey(current) === normalizeProfileTagKey(tag))) continue;
-        if (merged[field].length >= 5) continue;
+        if (merged[field].length >= MAX_PROFILE_TAGS_PER_CATEGORY) continue;
         merged[field].push(tag);
       }
     }

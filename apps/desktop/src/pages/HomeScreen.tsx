@@ -26,8 +26,6 @@ import {
 } from "../style-profile";
 
 type HomeScreenProps = {
-  displayName: string | null;
-  onSaveDisplayName: (displayName: string) => Promise<void>;
   onCompleteSetup: () => void;
 };
 
@@ -49,9 +47,9 @@ function includesTag(tags: ProfileTags, field: StyleTagField, value: string) {
   return tags[field].some((tag) => normalizeProfileTagKey(tag) === normalizeProfileTagKey(value));
 }
 
-export function HomeScreen({ displayName, onSaveDisplayName, onCompleteSetup }: HomeScreenProps) {
+export function HomeScreen({ onCompleteSetup }: HomeScreenProps) {
   const [styleProfile, setStyleProfile] = useState<ConfirmedStyleProfile | null>(null);
-  const [draftDisplayName, setDraftDisplayName] = useState(displayName ?? "");
+  const [isEditing, setIsEditing] = useState(false);
   const [draftKeywords, setDraftKeywords] = useState<ProfileTags>(emptyProfileTags);
   const [draftPreferenceState, setDraftPreferenceState] = useState<ProfilePreferenceState | null>(null);
   const [loading, setLoading] = useState(true);
@@ -70,7 +68,6 @@ export function HomeScreen({ displayName, onSaveDisplayName, onCompleteSetup }: 
     try {
       const savedProfile = await getConfirmedStyleProfile();
       setStyleProfile(savedProfile);
-      setDraftDisplayName(displayName ?? "");
       setDraftKeywords(savedProfile?.keywords ?? emptyProfileTags());
       setDraftPreferenceState(savedProfile?.preferenceState ?? null);
     } catch (loadError) {
@@ -84,16 +81,28 @@ export function HomeScreen({ displayName, onSaveDisplayName, onCompleteSetup }: 
     void loadStyleProfile();
   }, []);
 
+  function startEditing() {
+    if (!styleProfile) return;
+    setDraftKeywords(styleProfile.keywords);
+    setDraftPreferenceState(styleProfile.preferenceState);
+    setSaveError(null);
+    setSaveNotice(null);
+    setRefreshError(null);
+    setIsEditing(true);
+  }
+
+  const hasUnsavedChanges = isEditing && Boolean(styleProfile) && (
+    !sameTags(draftKeywords, styleProfile?.keywords ?? emptyProfileTags())
+    || Boolean(draftPreferenceState && styleProfile && !samePreferenceDecisions(draftPreferenceState, styleProfile.preferenceState))
+  );
+
   function cancelEditing() {
-    const changed = draftDisplayName.trim() !== (displayName ?? "").trim()
-      || !sameTags(draftKeywords, styleProfile?.keywords ?? emptyProfileTags())
-      || Boolean(draftPreferenceState && styleProfile && !samePreferenceDecisions(draftPreferenceState, styleProfile.preferenceState));
-    if (changed && !window.confirm("Discard your unsaved style changes?")) return;
-    setDraftDisplayName(displayName ?? "");
+    if (hasUnsavedChanges && !window.confirm("Discard your unsaved style changes?")) return;
     setDraftKeywords(styleProfile?.keywords ?? emptyProfileTags());
     setDraftPreferenceState(styleProfile?.preferenceState ?? null);
     setSaveError(null);
     setRefreshError(null);
+    setIsEditing(false);
   }
 
   function addTag(field: StyleTagField, value: string) {
@@ -133,11 +142,11 @@ export function HomeScreen({ displayName, onSaveDisplayName, onCompleteSetup }: 
     setSaveError(null);
     setSaveNotice(null);
     try {
-      const nameChanged = draftDisplayName.trim() !== (displayName ?? "").trim();
       const tagsChanged = !sameTags(draftKeywords, styleProfile.keywords);
       const preferenceChanged = !samePreferenceDecisions(draftPreferenceState, styleProfile.preferenceState);
-      if (!nameChanged && !tagsChanged && !preferenceChanged) {
+      if (!tagsChanged && !preferenceChanged) {
         setSaveNotice("No changes made — profile saved.");
+        setIsEditing(false);
         return;
       }
 
@@ -159,8 +168,8 @@ export function HomeScreen({ displayName, onSaveDisplayName, onCompleteSetup }: 
         setStyleProfile((current) => current ? { ...current, preferenceState: nextPreferenceState } : current);
         setDraftPreferenceState(nextPreferenceState);
       }
-      if (nameChanged) await onSaveDisplayName(draftDisplayName);
       setSaveNotice("Your style profile is saved.");
+      setIsEditing(false);
     } catch (saveFailure) {
       setSaveError(saveFailure instanceof Error ? saveFailure.message : "Could not save your style changes.");
     } finally {
@@ -219,13 +228,6 @@ export function HomeScreen({ displayName, onSaveDisplayName, onCompleteSetup }: 
     }
   }
 
-  const hasUnsavedChanges = Boolean(styleProfile) && (
-    draftDisplayName.trim() !== (displayName ?? "").trim()
-    || !sameTags(draftKeywords, styleProfile?.keywords ?? emptyProfileTags())
-    || Boolean(draftPreferenceState && styleProfile && !samePreferenceDecisions(draftPreferenceState, styleProfile.preferenceState))
-  );
-  const headingName = draftDisplayName.trim();
-
   useEffect(() => {
     if (!hasUnsavedChanges) return;
     const warnBeforeLeaving = (event: BeforeUnloadEvent) => {
@@ -245,21 +247,20 @@ export function HomeScreen({ displayName, onSaveDisplayName, onCompleteSetup }: 
       <section className="home-content">
         <div className="profile-title-row">
           <div>
-            <p className="eyebrow">YOUR STYLE, IN FOCUS{headingName ? ` · ${headingName}` : ""}</p>
-            <h1>{headingName ? `${headingName}'s Style Profile` : "Your Style Profile"}</h1>
+            <p className="eyebrow">YOUR STYLE, IN FOCUS</p>
+            <h1>Your Style Profile</h1>
           </div>
         </div>
 
+        <div className="profile-layout">
+        <div className="profile-main">
         {loading ? <p className="flow-status" role="status">Loading your saved style profile...</p> : error ? (
           <div className="home-error"><p role="alert">{error}</p><button className="text-button" type="button" onClick={() => void loadStyleProfile()}>Try again</button></div>
-        ) : styleProfile ? (
-          <section className="profile-editor" aria-label="Style profile">
-            <label className="display-name-field">Display name
-              <input value={draftDisplayName} maxLength={60} disabled={saving || refreshing} onChange={(event) => setDraftDisplayName(event.target.value)} />
-            </label>
-            <div className="aesthetic-summary"><span className="eyebrow">Aesthetic</span><strong title={styleProfile.aesthetic}>{styleProfile.aesthetic}</strong></div>
-            <div className="keyword-section">
-              <div className="keyword-title"><span>Style tags</span><span>{profileTagCount(draftKeywords)} saved</span></div>
+        ) : styleProfile && isEditing ? (
+          <section className="profile-editor" aria-label="Edit style profile">
+            <div className="aesthetic-summary"><span className="eyebrow">Aesthetic</span><div className="aesthetic-box"><strong title={styleProfile.aesthetic}>{styleProfile.aesthetic}</strong></div></div>
+            <div className="keyword-section style-tags">
+              <div className="keyword-title"><span>Style tags</span></div>
               <StyleTagList
                 tags={draftKeywords}
                 aiTags={draftPreferenceState?.aiTags}
@@ -277,6 +278,20 @@ export function HomeScreen({ displayName, onSaveDisplayName, onCompleteSetup }: 
               <button type="button" className="primary-button" disabled={saving || refreshing || profileTagCount(draftKeywords) === 0} onClick={() => void saveChanges()}>{saving ? "Saving changes..." : "Save Changes"}<span aria-hidden="true">↗</span></button>
             </div>
           </section>
+        ) : styleProfile ? (
+          <section className="saved-style" aria-label="Confirmed style profile">
+            <p className="eyebrow">Aesthetic</p>
+            <div className="aesthetic-box">
+              <h2>{styleProfile.aesthetic}</h2>
+            </div>
+            <div className="style-tags">
+              <div className="keyword-title saved-keyword-title style-tags-heading">
+                <span>Style tags</span>
+                <button className="secondary-button profile-action" type="button" onClick={startEditing}>Edit tags <span aria-hidden="true"><svg viewBox="0 0 24 24" width="15" height="15"><path fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" d="M12 20h9M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z" /></svg></span></button>
+              </div>
+              <StyleTagList tags={styleProfile.keywords} />
+            </div>
+          </section>
         ) : (
           <section className="profile-empty">
             <p className="eyebrow">No confirmed style yet</p>
@@ -287,7 +302,6 @@ export function HomeScreen({ displayName, onSaveDisplayName, onCompleteSetup }: 
         )}
 
         {saveNotice && <p className="flow-status" role="status">{saveNotice}</p>}
-        <PhotoLibrary compact />
         <div className="refresh-preferences refresh-preferences-after-photos">
           <div>
             <h2>Refresh Profile Preferences</h2>
@@ -296,9 +310,12 @@ export function HomeScreen({ displayName, onSaveDisplayName, onCompleteSetup }: 
           {hasUnsavedChanges && <p className="limit-message">Save profile edits before refreshing preferences.</p>}
           {refreshNotice && <p className="flow-status" role="status">{refreshNotice}</p>}
           {refreshError && <p className="flow-error" role="alert">{refreshError}</p>}
-          <button type="button" className="secondary-button" disabled={!styleProfile || loading || saving || refreshing || hasUnsavedChanges} onClick={() => void startRefresh()}>
+          <button type="button" className="secondary-button profile-action" disabled={!styleProfile || loading || saving || refreshing || hasUnsavedChanges} onClick={() => void startRefresh()}>
             {refreshing ? "Refreshing preferences..." : "Refresh Profile Preferences"}<span aria-hidden="true">↻</span>
           </button>
+        </div>
+        </div>
+        <PhotoLibrary compact />
         </div>
       </section>
     </main>

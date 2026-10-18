@@ -166,9 +166,9 @@ describe("free-text profile tags", () => {
     });
   });
 
-  it("enforces five tags per category and a 30-character maximum", () => {
-    const full = profileTags({ category: ["one", "two", "three", "four", "five"] });
-    expect(addProfileTag(full, "category", "six").error).toContain("no more than 5");
+  it("enforces ten tags per category and a 30-character maximum", () => {
+    const full = profileTags({ category: ["one", "two", "three", "four", "five", "six", "seven", "eight", "nine", "ten"] });
+    expect(addProfileTag(full, "category", "eleven").error).toContain("no more than 10");
     expect(addProfileTag(emptyProfileTags(), "fit", "x".repeat(31)).error).toContain("30 characters");
   });
 
@@ -240,8 +240,8 @@ describe("refresh preference persistence", () => {
   it("prioritizes user-kept tags and never exceeds the category maximum", () => {
     const merged = mergeProfileTags(
       profileTags({ fit: ["kept one", "kept two"] }),
-      profileTags({ fit: ["ai one", "ai two", "ai three", "ai four"] }),
+      profileTags({ fit: ["ai one", "ai two", "ai three", "ai four", "ai five", "ai six", "ai seven", "ai eight", "ai nine"] }),
     );
-    expect(merged.fit).toEqual(["kept one", "kept two", "ai one", "ai two", "ai three"]);
+    expect(merged.fit).toEqual(["kept one", "kept two", "ai one", "ai two", "ai three", "ai four", "ai five", "ai six", "ai seven", "ai eight"]);
   });
 });

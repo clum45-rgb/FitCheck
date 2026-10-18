@@ -5,7 +5,7 @@ import { OnboardingFlow } from "./onboarding/OnboardingFlow";
 import { HomeScreen } from "./pages/HomeScreen";
 
 export function App() {
-  const { configured, session, profile, loading, profileError, signIn, signUp, updateDisplayName, refreshProfile } = useAuth();
+  const { configured, session, profile, loading, profileError, signIn, signUp, refreshProfile } = useAuth();
   const [showOnboarding, setShowOnboarding] = useState(false);
 
   if (!configured) {
@@ -48,10 +48,6 @@ export function App() {
   }
 
   return (
-    <HomeScreen
-      displayName={profile.display_name}
-      onSaveDisplayName={updateDisplayName}
-      onCompleteSetup={() => setShowOnboarding(true)}
-    />
+    <HomeScreen onCompleteSetup={() => setShowOnboarding(true)} />
   );
 }

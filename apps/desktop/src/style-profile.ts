@@ -51,7 +51,7 @@ export type StyleProfile = {
 const MAX_ITEMS = 12;
 const MAX_ITEM_LENGTH = 80;
 export const MAX_AESTHETIC_LENGTH = 20;
-export const MAX_PROFILE_TAGS_PER_CATEGORY = 5;
+export const MAX_PROFILE_TAGS_PER_CATEGORY = 10;
 export const MAX_PROFILE_TAG_LENGTH = 30;
 
 const stringListSchema = {
