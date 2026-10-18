@@ -301,6 +301,12 @@ main {
   border: 1px solid #e4ddd6;
   border-radius: 14px;
   background: #fffcf9;
+  scroll-margin-top: 64px;
+}
+
+.product-card-active {
+  border-color: #5b4b8a;
+  box-shadow: 0 0 0 1px #5b4b8a;
 }
 
 .product-card img {
@@ -333,6 +339,39 @@ main {
 
 .product-copy a {
   color: #1c1917;
+}
+
+.product-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.product-actions .button-primary {
+  padding: 6px 12px;
+  font-size: 13px;
+}
+
+.product-actions .button-ghost {
+  padding: 6px 12px;
+  font-size: 13px;
+}
+
+.recommendations-nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 12px;
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  background: #fffcf9;
+  padding: 8px 0;
+}
+
+.recommendations-nav .muted {
+  font-size: 13px;
 }
 
 dialog {

@@ -1,6 +1,10 @@
-import type { ProductCardData } from "../types";
+import type { CartItem, Match, ProductCardData } from "../types";
 
-const scanApiUrl = "http://localhost:3000/api/scan";
+const backendOrigin = "http://localhost:3000";
+const scanApiUrl = `${backendOrigin}/api/scan`;
+const matchApiUrl = `${backendOrigin}/api/match`;
+const approveApiUrl = `${backendOrigin}/api/cart/approve`;
+const removeApiUrl = `${backendOrigin}/api/cart/remove`;
 
 export type StoreScan = {
   storeDomain: string;
@@ -86,4 +90,124 @@ export async function saveStyleProfile(): Promise<never> {
 
 export async function uploadInspirationPhotos(): Promise<never> {
   throw new Error("Photo uploads aren't implemented yet.");
+}
+
+type MatchProduct = {
+  id: string;
+  title: string;
+  price: number;
+  currency: string;
+  url: string;
+  images: string[];
+  matchScore: number;
+  matchLabel: string;
+};
+
+type MatchResponseBody = {
+  error?: string;
+  storeDomain?: string;
+  matches?: MatchProduct[];
+};
+
+export async function fetchMatches(accessToken: string, storeDomain: string): Promise<Match[]> {
+  let response: Response;
+  try {
+    response = await fetch(matchApiUrl, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${accessToken}`,
+      },
+      body: JSON.stringify({ storeDomain }),
+    });
+  } catch {
+    throw new Error("The match server is unavailable. Start it and try again.");
+  }
+
+  const body = (await response.json().catch(() => null)) as MatchResponseBody | null;
+  if (!response.ok) {
+    throw new Error(body?.error ?? "Matches couldn't be loaded.");
+  }
+  if (!Array.isArray(body?.matches)) {
+    throw new Error("The match server returned an unexpected response.");
+  }
+
+  return body.matches.map((product) => ({
+    productId: product.id,
+    name: product.title,
+    imageUrl: product.images[0] ?? "",
+    price: `${product.currency} ${product.price.toFixed(2)}`,
+    url: product.url,
+    matchLabel: product.matchLabel,
+    matchScore: product.matchScore,
+    storeDomain,
+  }));
+}
+
+type ApproveResponseBody = {
+  error?: string;
+  items?: CartItem[];
+};
+
+export async function approveMatch(accessToken: string, match: Match): Promise<void> {
+  let response: Response;
+  try {
+    response = await fetch(approveApiUrl, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${accessToken}`,
+      },
+      body: JSON.stringify({
+        product: {
+          productId: match.productId,
+          name: match.name,
+          imageUrl: match.imageUrl,
+          url: match.url,
+          storeDomain: match.storeDomain,
+        },
+      }),
+    });
+  } catch {
+    throw new Error("The cart server is unavailable. Start it and try again.");
+  }
+
+  const body = (await response.json().catch(() => null)) as ApproveResponseBody | null;
+  if (!response.ok) {
+    throw new Error(body?.error ?? "This piece couldn't be added to your cart.");
+  }
+}
+
+export async function removeFromCart(accessToken: string, productId: string): Promise<void> {
+  let response: Response;
+  try {
+    response = await fetch(removeApiUrl, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${accessToken}`,
+      },
+      body: JSON.stringify({ productId }),
+    });
+  } catch {
+    throw new Error("The cart server is unavailable. Start it and try again.");
+  }
+
+  const body = (await response.json().catch(() => null)) as ApproveResponseBody | null;
+  if (!response.ok) {
+    throw new Error(body?.error ?? "This piece couldn't be removed from your cart.");
+  }
+}
+
+export async function navigateCurrentTab(url: string): Promise<void> {
+  if (typeof chrome === "undefined" || !chrome.tabs?.query || !chrome.tabs.update) {
+    throw new Error("FitFinder can only navigate from the Chrome side panel.");
+  }
+
+  const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+  if (!tab?.id) {
+    throw new Error("FitFinder can't find the current tab.");
+  }
+
+  await chrome.tabs.update(tab.id, { url });
 }

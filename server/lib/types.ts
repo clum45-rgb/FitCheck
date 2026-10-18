@@ -47,3 +47,12 @@ export type ScanResponse = {
 export type ScanErrorResponse = {
   error: string;
 };
+
+export type CartItem = {
+  productId: string;
+  name: string;
+  imageUrl: string;
+  url: string;
+  storeDomain: string;
+  approvedAt: string;
+};
