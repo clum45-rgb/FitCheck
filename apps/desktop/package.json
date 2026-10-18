@@ -6,12 +6,14 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc --noEmit && vite build",
+    "test": "vitest run",
     "check:style-profile": "node scripts/check-style-profile.ts",
     "analyze:style": "node scripts/analyze-style.ts",
     "list:style-photos": "node scripts/list-style-photos.ts",
     "confirm:style": "node scripts/confirm-style.ts"
   },
   "dependencies": {
+    "@supabase/supabase-js": "^2.57.4",
     "react": "^19.2.0",
     "react-dom": "^19.2.0"
   },
@@ -20,6 +22,7 @@
     "@types/react-dom": "^19.2.2",
     "@vitejs/plugin-react": "^5.0.4",
     "typescript": "^5.9.3",
-    "vite": "^7.1.9"
+    "vite": "^7.1.9",
+    "vitest": "^5.0.5"
   }
 }

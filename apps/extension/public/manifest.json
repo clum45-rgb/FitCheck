@@ -1,13 +1,17 @@
 {
   "manifest_version": 3,
-  "name": "FitCheck",
+  "name": "FitFinder",
   "version": "0.1.0",
-  "description": "Blank Chrome extension",
-  "permissions": ["activeTab", "scripting"],
+  "description": "Discover clothing that matches your style while you browse.",
+  "permissions": ["sidePanel"],
   "action": {
-    "default_title": "FitCheck"
+    "default_title": "FitFinder"
+  },
+  "side_panel": {
+    "default_path": "index.html"
   },
   "background": {
-    "service_worker": "background/service-worker.js"
+    "service_worker": "background/service-worker.js",
+    "type": "module"
   }
 }
