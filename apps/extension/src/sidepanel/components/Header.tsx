@@ -1,7 +1,7 @@
 import { Settings, Shirt } from "lucide-react";
 
 type HeaderProps = {
-  onOpenSettings: () => void;
+  onOpenSettings?: () => void;
 };
 
 export function Header({ onOpenSettings }: HeaderProps) {
@@ -16,9 +16,11 @@ export function Header({ onOpenSettings }: HeaderProps) {
           <p className="prototype">Prototype</p>
         </div>
       </div>
-      <button type="button" className="icon-button" onClick={onOpenSettings} aria-label="Open settings">
-        <Settings size={18} aria-hidden="true" />
-      </button>
+      {onOpenSettings ? (
+        <button type="button" className="icon-button" onClick={onOpenSettings} aria-label="Open settings">
+          <Settings size={18} aria-hidden="true" />
+        </button>
+      ) : null}
     </header>
   );
 }

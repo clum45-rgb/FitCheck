@@ -41,6 +41,7 @@ function emitServiceWorker(): Plugin {
 
 export default defineConfig({
   root: appRoot,
+  envDir: resolve(appRoot, "../desktop"),
   base: "./",
   plugins: [react(), stripCrossorigin(), emitServiceWorker()],
   build: {

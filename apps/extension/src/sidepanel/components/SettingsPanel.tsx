@@ -1,5 +1,6 @@
 import { useEffect, useId, useRef, useState } from "react";
 import { Images, Info, SlidersHorizontal, UserRound, X } from "lucide-react";
+import { useAuth } from "../../auth/AuthProvider";
 import { uploadInspirationPhotos } from "../../lib/placeholderActions";
 import { ErrorNotice } from "./ErrorNotice";
 
@@ -9,10 +10,12 @@ type SettingsPanelProps = {
 };
 
 export function SettingsPanel({ onClose, onEditStyle }: SettingsPanelProps) {
+  const { session, signOut } = useAuth();
   const dialogRef = useRef<HTMLDialogElement>(null);
   const titleId = useId();
   const [notice, setNotice] = useState<string | null>(null);
   const [showAbout, setShowAbout] = useState(false);
+  const [showAccount, setShowAccount] = useState(false);
   const [pending, setPending] = useState(false);
 
   useEffect(() => {
@@ -35,10 +38,17 @@ export function SettingsPanel({ onClose, onEditStyle }: SettingsPanelProps) {
     }
   }
 
-  function handleAccount() {
-    setShowAbout(false);
-    setPending(false);
-    setNotice("Account settings aren't available yet. This feature will be connected in a future update.");
+  async function handleSignOut() {
+    setNotice(null);
+    setPending(true);
+    try {
+      const result = await signOut();
+      if (result.error) setNotice(result.error);
+    } catch (error) {
+      setNotice(error instanceof Error ? error.message : "Sign out failed. Try again.");
+    } finally {
+      setPending(false);
+    }
   }
 
   return (
@@ -65,7 +75,17 @@ export function SettingsPanel({ onClose, onEditStyle }: SettingsPanelProps) {
             <Images size={16} aria-hidden="true" />
             Manage inspiration photos
           </button>
-          <button type="button" className="settings-row" onClick={handleAccount} disabled={pending}>
+          <button
+            type="button"
+            className="settings-row"
+            aria-expanded={showAccount}
+            onClick={() => {
+              setNotice(null);
+              setShowAbout(false);
+              setShowAccount((current) => !current);
+            }}
+            disabled={pending}
+          >
             <UserRound size={16} aria-hidden="true" />
             Account settings
           </button>
@@ -82,10 +102,17 @@ export function SettingsPanel({ onClose, onEditStyle }: SettingsPanelProps) {
             About FitFinder
           </button>
         </div>
+        {showAccount ? (
+          <div className="account-panel">
+            <p className="muted">Signed in as {session?.user.email ?? "your FitCheck account"}.</p>
+            <button className="button button-ghost" type="button" onClick={() => void handleSignOut()} disabled={pending}>
+              {pending ? "Signing out..." : "Sign out"}
+            </button>
+          </div>
+        ) : null}
         {showAbout ? (
           <p className="about">
-            FitFinder is a prototype for finding clothes that match a saved style while you browse. Scanning,
-            accounts, and photo uploads are not connected yet.
+            FitFinder finds clothes that match your saved style while you browse. Photo uploads are not connected yet.
           </p>
         ) : null}
         {notice ? <ErrorNotice message={notice} onDismiss={() => setNotice(null)} /> : null}

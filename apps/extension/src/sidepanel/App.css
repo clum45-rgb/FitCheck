@@ -432,6 +432,86 @@ legend {
   font-size: 14px;
 }
 
+.auth-card h2 {
+  margin-top: 4px;
+  font-size: 22px;
+}
+
+.auth-tabs {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+}
+
+.auth-tabs button {
+  min-height: 36px;
+  border: 1px solid #e4ddd6;
+  border-radius: 999px;
+  background: #fffcf9;
+  color: #1c1917;
+}
+
+.auth-tabs button[aria-selected="true"] {
+  border-color: #5b4b8a;
+  background: #efeaf8;
+  color: #3d335d;
+  font-weight: 600;
+}
+
+.auth-form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.auth-form label {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.auth-form input {
+  min-height: 40px;
+  padding: 0 12px;
+  border: 1px solid #e4ddd6;
+  border-radius: 12px;
+  background: #fffcf9;
+  color: inherit;
+  font: inherit;
+  font-weight: 400;
+}
+
+.auth-form input:focus {
+  border-color: #5b4b8a;
+  outline: 2px solid rgba(91, 75, 138, 0.18);
+}
+
+.optional {
+  color: #6f6a64;
+  font-weight: 500;
+}
+
+.form-feedback {
+  font-size: 13px;
+}
+
+.form-error {
+  color: #6b3a2a;
+}
+
+.form-success {
+  color: #3d335d;
+}
+
+.account-panel {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 10px;
+}
+
 @keyframes spin {
   to {
     transform: rotate(360deg);

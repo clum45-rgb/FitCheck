@@ -1,6 +1,8 @@
 import { useState } from "react";
+import { useAuth } from "../auth/AuthProvider";
 import { scanCurrentPage } from "../lib/placeholderActions";
 import type { ProductCardData, StyleProfile } from "../types";
+import { AuthScreen } from "./components/AuthScreen";
 import { CurrentPageCard } from "./components/CurrentPageCard";
 import { Header } from "./components/Header";
 import { ProductCard } from "./components/ProductCard";
@@ -16,6 +18,67 @@ const initialProfile: StyleProfile = {
 };
 
 export function App() {
+  const { configured, session, loading, profileError, signIn, signUp, refreshProfile } = useAuth();
+
+  if (!configured) {
+    return (
+      <div className="app">
+        <Header />
+        <main>
+          <section className="card">
+            <p className="eyebrow">Setup required</p>
+            <h2>Connect FitFinder to your account</h2>
+            <p className="muted">
+              Add the Supabase URL and publishable key in the desktop env file, then rebuild the extension.
+            </p>
+          </section>
+        </main>
+      </div>
+    );
+  }
+
+  if (loading) {
+    return (
+      <div className="app">
+        <Header />
+        <main>
+          <p className="muted" role="status">Loading your account...</p>
+        </main>
+      </div>
+    );
+  }
+
+  if (profileError) {
+    return (
+      <div className="app">
+        <Header />
+        <main>
+          <section className="card">
+            <p className="eyebrow">Account unavailable</p>
+            <h2>We couldn't load your account.</h2>
+            <p className="muted">{profileError}</p>
+            <button className="button button-primary" type="button" onClick={() => void refreshProfile()}>
+              Try again
+            </button>
+          </section>
+        </main>
+      </div>
+    );
+  }
+
+  if (!session) {
+    return (
+      <div className="app">
+        <Header />
+        <AuthScreen signIn={signIn} signUp={signUp} />
+      </div>
+    );
+  }
+
+  return <SignedInApp />;
+}
+
+function SignedInApp() {
   const [profile, setProfile] = useState<StyleProfile>(initialProfile);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [editingStyle, setEditingStyle] = useState(false);
