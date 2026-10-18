@@ -25,8 +25,18 @@ button:disabled { cursor: wait; opacity: .65; }
 .auth-story { position: relative; display: flex; min-height: 100vh; flex-direction: column; justify-content: space-between; overflow: hidden; padding: 38px 6vw 34px; background: #e9e1f1; color: #292432; }
 .auth-story .eyebrow { color: #554864; }
 .wordmark { display: flex; align-items: center; gap: 10px; font-size: 12px; font-weight: 750; letter-spacing: .14em; }
-.brand-logo { display: block; height: 28px; width: auto; max-width: min(168px, 42vw); object-fit: contain; object-position: left center; }
-.brand-logo-auth { height: 34px; max-width: min(200px, 70vw); }
+.brand-logo {
+  display: block;
+  height: 36px;
+  width: auto;
+  max-width: min(160px, 46vw);
+  object-fit: contain;
+  object-position: left center;
+  /* Near-black mark art → site ink */
+  filter: brightness(0) saturate(100%);
+  opacity: 0.92;
+}
+.brand-logo-auth { height: 42px; max-width: min(190px, 72vw); }
 .story-copy { position: relative; z-index: 1; max-width: 630px; padding: 8vh 0; }
 .eyebrow { margin: 0 0 15px; color: var(--moss); font-size: 11px; font-weight: 750; letter-spacing: .13em; text-transform: uppercase; }
 .story-copy h1 { margin: 0; font-family: Georgia, "Times New Roman", serif; font-size: 76px; font-weight: 400; line-height: .99; }
@@ -320,7 +330,7 @@ button:disabled { cursor: wait; opacity: .65; }
   .mock-notice { align-items: flex-start; flex-direction: column; gap: 5px; }
   .message-screen h1, .welcome-panel h1, .home-content h1, .cart-title-row h1 { font-size: 42px; }
   .flow-heading h1, .review-heading h1 { font-size: 44px; }
-  .brand-logo { height: 24px; }
+  .brand-logo { height: 30px; }
   .app-header-end { flex-wrap: wrap; justify-content: flex-start; gap: 10px 14px; }
   .profile-screen .app-header-email { max-width: 100%; }
   .cart-title-row { align-items: flex-start; flex-direction: column; }

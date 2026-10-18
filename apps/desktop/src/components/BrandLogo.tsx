@@ -2,15 +2,15 @@ type BrandLogoProps = {
   className?: string;
 };
 
-/** Wide Fitspo wordmark (fitspo2.png). Sized via CSS height; width stays proportional. */
+/** Fitspo wordmark with hanger (fitspohanger.png). Sized via CSS height; width stays proportional. */
 export function BrandLogo({ className = "" }: BrandLogoProps) {
   return (
     <img
       className={`brand-logo${className ? ` ${className}` : ""}`}
-      src="/fitspo2.png"
+      src="/fitspohanger.png"
       alt="Fitspo"
-      width={1323}
-      height={315}
+      width={1211}
+      height={577}
       decoding="async"
     />
   );

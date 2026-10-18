@@ -98,15 +98,19 @@ main,
   display: flex;
   align-items: center;
   gap: 10px;
+  min-width: 0;
 }
 
-.brand h1 {
-  font-family: "Avenir Next", Avenir, "Segoe UI", sans-serif;
-  font-size: 12px;
-  font-weight: 750;
-  letter-spacing: 0.14em;
-  line-height: 1;
-  text-transform: uppercase;
+.brand-logo {
+  display: block;
+  height: 14px;
+  width: auto;
+  max-width: 110px;
+  object-fit: contain;
+  object-position: left center;
+  /* Match site ink (#20231f) */
+  filter: brightness(0) saturate(100%);
+  opacity: 0.92;
 }
 
 .icon-button {

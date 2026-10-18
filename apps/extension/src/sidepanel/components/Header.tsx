@@ -8,7 +8,14 @@ export function Header({ onOpenSettings }: HeaderProps) {
   return (
     <header className="header">
       <div className="brand">
-        <h1>Fitspo</h1>
+        <img
+          className="brand-logo"
+          src="./sidehanger.png"
+          alt="Fitspo"
+          width={1565}
+          height={265}
+          decoding="async"
+        />
       </div>
       {onOpenSettings ? (
         <button type="button" className="icon-button" onClick={onOpenSettings} aria-label="Open settings">
