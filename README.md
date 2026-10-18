@@ -27,22 +27,11 @@ Load the extension from `apps/extension/dist` on `chrome://extensions`. `npm run
 
 ## Environment
 
-Create `apps/desktop/.env.local` with the shared project's browser-facing keys:
+Copy each example file, then fill in real values. Never commit those copies.
 
-```
-VITE_SUPABASE_URL=
-VITE_SUPABASE_PUBLISHABLE_KEY=
-```
-
-The extension reads the same file. Never put a service-role key or other privileged secret in either Vite app. The root `.gitignore` excludes `.env` files.
-
-Photo analysis and the scan/match server need privileged keys. Put these in the **root** `.env` (copy from `.env.example`) and in `server/.env.local` (copy from `server/.env.example`):
-
-```
-OPENAI_API_KEY=
-SUPABASE_URL=
-SUPABASE_SERVICE_ROLE_KEY=
-```
+- `apps/desktop/.env.example` → `apps/desktop/.env.local` — browser keys for the web app and extension
+- `.env.example` → `.env` — OpenAI and Supabase service keys for photo analysis
+- `server/.env.example` → `server/.env.local` — the same privileged keys for scan, match, and cart
 
 Restart the desktop and Next servers after changing env files.
 
