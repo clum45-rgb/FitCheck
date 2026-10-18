@@ -1,6 +1,8 @@
-import { useEffect, useState } from "react";
+import { useState, useEffect } from "react";
 import { PhotoLibrary } from "../onboarding/PhotoLibrary";
+import { StyleTagList } from "../onboarding/StyleTagList";
 import { getConfirmedStyleProfile, normalizeStyleProfile, updateSavedStyleProfile, type ConfirmedStyleProfile } from "../onboarding/styleProfiles";
+import { STYLE_TAG_FIELDS, STYLE_TAG_VOCAB, coerceStyleTags, emptyStyleTags, styleTagCount, withoutStyleTag, type StyleTagField, type StyleTags } from "../style-profile";
 
 type HomeScreenProps = {
   displayName: string | null;
@@ -10,8 +12,9 @@ type HomeScreenProps = {
 export function HomeScreen({ displayName, onCompleteSetup }: HomeScreenProps) {
   const [styleProfile, setStyleProfile] = useState<ConfirmedStyleProfile | null>(null);
   const [draftAesthetic, setDraftAesthetic] = useState("");
-  const [draftKeywords, setDraftKeywords] = useState<string[]>([]);
-  const [keywordInput, setKeywordInput] = useState("");
+  const [draftKeywords, setDraftKeywords] = useState<StyleTags>(emptyStyleTags);
+  const [addField, setAddField] = useState<StyleTagField>("category");
+  const [addValue, setAddValue] = useState("");
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
@@ -37,8 +40,8 @@ export function HomeScreen({ displayName, onCompleteSetup }: HomeScreenProps) {
 
   function startEditing() {
     setDraftAesthetic(styleProfile?.aesthetic ?? "");
-    setDraftKeywords(styleProfile?.keywords ?? []);
-    setKeywordInput("");
+    setDraftKeywords(styleProfile?.keywords ?? emptyStyleTags());
+    setAddValue("");
     setSaveError(null);
     setSaveNotice(null);
     setIsEditing(true);
@@ -49,16 +52,22 @@ export function HomeScreen({ displayName, onCompleteSetup }: HomeScreenProps) {
       || JSON.stringify(draftKeywords) !== JSON.stringify(styleProfile?.keywords ?? []);
     if (changed && !window.confirm("Discard your unsaved style changes?")) return;
     setDraftAesthetic(styleProfile?.aesthetic ?? "");
-    setDraftKeywords(styleProfile?.keywords ?? []);
+    setDraftKeywords(styleProfile?.keywords ?? emptyStyleTags());
     setSaveError(null);
     setIsEditing(false);
   }
 
-  function addKeyword() {
-    const keyword = keywordInput.trim();
-    if (!keyword || draftKeywords.some((item) => item.toLocaleLowerCase() === keyword.toLocaleLowerCase())) return;
-    setDraftKeywords((current) => [...current, keyword]);
-    setKeywordInput("");
+  const addOptions = (STYLE_TAG_VOCAB[addField] as readonly string[]).filter(
+    (value) => !(draftKeywords[addField] as readonly string[]).includes(value),
+  );
+
+  function addTag() {
+    if (!addOptions.includes(addValue)) return;
+    setDraftKeywords((current) => coerceStyleTags({
+      ...current,
+      [addField]: [...current[addField], addValue],
+    }));
+    setAddValue("");
   }
 
   async function saveChanges() {
@@ -106,37 +115,40 @@ export function HomeScreen({ displayName, onCompleteSetup }: HomeScreenProps) {
                 <input value={draftAesthetic} onChange={(event) => setDraftAesthetic(event.target.value)} aria-label="Edit aesthetic" />
               </label>
               <div className="keyword-section">
-                <div className="keyword-title"><span>Style keywords</span><span>{draftKeywords.length} selected</span></div>
-                <ul className="keyword-list">
-                  {draftKeywords.map((keyword) => (
-                    <li key={keyword}><span>{keyword}</span><button type="button" aria-label={`Remove ${keyword}`} disabled={saving} onClick={() => setDraftKeywords((current) => current.filter((item) => item !== keyword))}>×</button></li>
-                  ))}
-                </ul>
-                <form className="keyword-add-form" onSubmit={(event) => { event.preventDefault(); addKeyword(); }}>
-                  <label className="visually-hidden" htmlFor="new-keyword">Add a style keyword</label>
-                  <input id="new-keyword" value={keywordInput} maxLength={40} onChange={(event) => setKeywordInput(event.target.value)} placeholder="Add a keyword" disabled={saving} />
-                  <button type="submit" className="secondary-button" disabled={saving || !keywordInput.trim()}>Add keyword <span aria-hidden="true">+</span></button>
+                <div className="keyword-title"><span>Style tags</span><span>{styleTagCount(draftKeywords)} selected</span></div>
+                <StyleTagList tags={draftKeywords} disabled={saving} onRemove={(field, value) => setDraftKeywords((current) => withoutStyleTag(current, field, value))} />
+                <form className="keyword-add-form" onSubmit={(event) => { event.preventDefault(); addTag(); }}>
+                  <label className="visually-hidden" htmlFor="tag-field">Tag field</label>
+                  <select id="tag-field" value={addField} disabled={saving} onChange={(event) => { setAddField(event.target.value as StyleTagField); setAddValue(""); }}>
+                    {STYLE_TAG_FIELDS.map((field) => <option key={field} value={field}>{field}</option>)}
+                  </select>
+                  <label className="visually-hidden" htmlFor="tag-value">Tag value</label>
+                  <select id="tag-value" value={addValue} disabled={saving || addOptions.length === 0} onChange={(event) => setAddValue(event.target.value)}>
+                    <option value="">Select a tag</option>
+                    {addOptions.map((value) => <option key={value} value={value}>{value}</option>)}
+                  </select>
+                  <button type="submit" className="secondary-button" disabled={saving || !addValue}>Add tag <span aria-hidden="true">+</span></button>
                 </form>
               </div>
               {saveError && <p className="flow-error" role="alert">{saveError}</p>}
               <div className="review-bottom editor-actions">
                 <button type="button" className="text-button" disabled={saving} onClick={cancelEditing}>Cancel</button>
-                <button type="button" className="primary-button" disabled={saving || !draftAesthetic.trim() || draftKeywords.every((keyword) => !keyword.trim())} onClick={() => void saveChanges()}>{saving ? "Saving changes..." : "Save Changes"}<span aria-hidden="true">↗</span></button>
+                <button type="button" className="primary-button" disabled={saving || !draftAesthetic.trim() || styleTagCount(draftKeywords) === 0} onClick={() => void saveChanges()}>{saving ? "Saving changes..." : "Save Changes"}<span aria-hidden="true">↗</span></button>
               </div>
             </section>
           ) : (
             <section className="saved-style" aria-label="Confirmed style profile">
               <div className="saved-style-heading"><p className="eyebrow">CONFIRMED AESTHETIC</p><span className="saved-status">SAVED</span></div>
               <h2>{styleProfile.aesthetic}</h2>
-              <p className="keyword-title saved-keyword-title">Style keywords <span>{styleProfile.keywords.length} saved</span></p>
-              <ul className="saved-keywords">{styleProfile.keywords.map((keyword) => <li key={keyword}>{keyword}</li>)}</ul>
+              <p className="keyword-title saved-keyword-title">Style tags <span>{styleTagCount(styleProfile.keywords)} saved</span></p>
+              <StyleTagList tags={styleProfile.keywords} />
             </section>
           )
         ) : (
           <section className="profile-empty">
             <p className="eyebrow">No confirmed style yet</p>
             <h2>Start with the looks you love.</h2>
-            <p>Complete the inspiration flow to save your aesthetic and style keywords here.</p>
+            <p>Complete the inspiration flow to save your aesthetic and style tags here.</p>
             <button className="primary-button" type="button" onClick={onCompleteSetup}>Continue setup <span aria-hidden="true">↗</span></button>
           </section>
         )}

@@ -1,6 +1,8 @@
+import { type StyleTags } from "../style-profile";
+
 export type StyleAnalysis = {
   aesthetic: string;
-  keywords: string[];
+  keywords: StyleTags;
   isMock: true;
 };
 
@@ -10,7 +12,13 @@ export async function analyzeStylePhotos(storagePaths: string[]): Promise<StyleA
   await new Promise((resolve) => window.setTimeout(resolve, 650));
   return {
     aesthetic: "Relaxed modern",
-    keywords: ["Clean lines", "Relaxed tailoring", "Neutral palette", "Everyday layers"],
+    keywords: {
+      category: ["shirt", "pants"],
+      fit: ["relaxed"],
+      color: ["grey", "beige", "white"],
+      material: ["cotton"],
+      aesthetic: ["minimal", "casual"],
+    },
     isMock: true,
   };
 }

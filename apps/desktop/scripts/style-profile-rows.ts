@@ -1,11 +1,11 @@
-import type { StyleProfile } from "../src/style-profile.ts";
+import type { StyleProfile, StyleTags } from "../src/style-profile.ts";
 import { assertUserId, requireSupabase } from "./style-photos.ts";
 
 export type SavedStyleProfile = {
   id: string;
   user_id: string;
-  aesthetic: string[];
-  keywords: string[];
+  aesthetic: string;
+  keywords: StyleTags;
   colors: string[];
   silhouettes: string[];
   materials: string[];

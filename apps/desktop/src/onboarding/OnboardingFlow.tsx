@@ -2,8 +2,10 @@ import { useEffect, useRef, useState, type ChangeEvent } from "react";
 import { MAX_PHOTO_COUNT, validatePhotoFiles } from "./photoValidation";
 import { uploadInspirationPhotos, type PhotoUploadProgress } from "./photoStorage";
 import { analyzeStylePhotos, type StyleAnalysis } from "./styleAnalysis";
+import { StyleTagList } from "./StyleTagList";
 import { getConfirmedStyleProfile, saveConfirmedStyleProfile } from "./styleProfiles";
 import { getUserPhotoMetadata } from "./photoLibraryApi";
+import { emptyStyleTags, styleTagCount, withoutStyleTag, type StyleTagField, type StyleTags } from "../style-profile";
 
 type SelectedPhoto = {
   id: string;
@@ -24,7 +26,7 @@ export function OnboardingFlow({ isReplacement, onConfirmed }: OnboardingFlowPro
   const [savedCountLoaded, setSavedCountLoaded] = useState(false);
   const [analysis, setAnalysis] = useState<StyleAnalysis | null>(null);
   const [aesthetic, setAesthetic] = useState("");
-  const [keywords, setKeywords] = useState<string[]>([]);
+  const [keywords, setKeywords] = useState<StyleTags>(emptyStyleTags);
   const [phase, setPhase] = useState<"loading-profile" | "ready" | "validating" | "uploading" | "analyzing" | "review" | "saving" | "error">("loading-profile");
   const [error, setError] = useState<string | null>(null);
   const [uploadProgress, setUploadProgress] = useState<PhotoUploadProgress | null>(null);
@@ -156,14 +158,14 @@ export function OnboardingFlow({ isReplacement, onConfirmed }: OnboardingFlowPro
     setStoragePaths([]);
     setAnalysis(null);
     setAesthetic("");
-    setKeywords([]);
+    setKeywords(emptyStyleTags());
     setError(null);
     setPhase("ready");
     setRecoveredProfile(false);
   }
 
-  function removeKeyword(keyword: string) {
-    setKeywords((current) => current.filter((item) => item !== keyword));
+  function removeTag(field: StyleTagField, value: string) {
+    setKeywords((current) => withoutStyleTag(current, field, value));
   }
 
   async function confirmStyle() {
@@ -237,7 +239,7 @@ export function OnboardingFlow({ isReplacement, onConfirmed }: OnboardingFlowPro
           <div className="review-heading">
             <p className="eyebrow">Step 02 / 02 · Style profile</p>
             <h1>Your style, taking shape.</h1>
-            <p>Keep the words that fit. You can remove anything that doesn't.</p>
+            <p>Keep the tags that fit. You can remove anything that doesn't.</p>
           </div>
           {analysis?.isMock && <div className="mock-notice"><span>DEVELOPMENT MOCK</span> These sample suggestions are not AI analysis.</div>}
           {recoveredProfile && <div className="mock-notice saved-profile-notice"><span>SAVED PROFILE</span> This confirmed profile is saved; confirm again only to complete onboarding.</div>}
@@ -246,19 +248,15 @@ export function OnboardingFlow({ isReplacement, onConfirmed }: OnboardingFlowPro
               <input value={aesthetic} onChange={(event) => setAesthetic(event.target.value)} aria-label="Aesthetic label" />
             </label>
             <div className="keyword-section">
-              <div className="keyword-title"><span>Style keywords</span><span>{keywords.length} selected</span></div>
-              <ul className="keyword-list">
-                {keywords.map((keyword) => (
-                  <li key={keyword}><span>{keyword}</span><button type="button" aria-label={`Remove ${keyword}`} onClick={() => removeKeyword(keyword)}>×</button></li>
-                ))}
-              </ul>
-              {keywords.length === 0 && <p className="keyword-empty">No keywords selected. Upload new photos to get another set of suggestions.</p>}
+              <div className="keyword-title"><span>Style tags</span><span>{styleTagCount(keywords)} selected</span></div>
+              <StyleTagList tags={keywords} onRemove={removeTag} disabled={busy} />
+              {styleTagCount(keywords) === 0 && <p className="keyword-empty">No tags selected. Upload new photos to get another set of suggestions.</p>}
             </div>
           </div>
           {error && <p className="flow-error" role="alert">{error}</p>}
           <div className="review-bottom">
             <button type="button" className="text-button" onClick={replacePhotos} disabled={busy}>Replace photos</button>
-            <button type="button" className="primary-button" disabled={!aesthetic.trim() || keywords.length === 0 || busy} onClick={() => void confirmStyle()}>
+            <button type="button" className="primary-button" disabled={!aesthetic.trim() || styleTagCount(keywords) === 0 || busy} onClick={() => void confirmStyle()}>
               {phase === "saving" ? "Saving profile..." : "Confirm style profile"}<span aria-hidden="true">↗</span>
             </button>
           </div>

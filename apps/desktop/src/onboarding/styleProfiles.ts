@@ -1,46 +1,29 @@
 import { supabase } from "../lib/supabase";
+import { aestheticTitle, coerceStyleTags, styleTagCount, type StyleTags } from "../style-profile";
 
 export type ConfirmedStyleProfile = {
   aesthetic: string;
-  keywords: string[];
+  keywords: StyleTags;
   confirmed_at: string | null;
 };
 
 export type StyleProfileRepository = {
-  saveStyleProfile: (aesthetic: string, keywords: string[]) => Promise<void>;
+  saveStyleProfile: (aesthetic: string, keywords: StyleTags) => Promise<void>;
   markOnboardingComplete: () => Promise<void>;
 };
 
-function textList(value: unknown) {
-  if (Array.isArray(value)) return value.filter((item): item is string => typeof item === "string");
-  if (typeof value === "string" && value.trim()) return [value];
-  return [];
-}
-
-export function readConfirmedStyleProfile(row: {
-  aesthetic: unknown;
-  keywords: unknown;
-  confirmed_at: string | null;
-}): ConfirmedStyleProfile {
-  return {
-    aesthetic: textList(row.aesthetic).join(", "),
-    keywords: textList(row.keywords).map((keyword) => keyword.trim()).filter(Boolean),
-    confirmed_at: row.confirmed_at,
-  };
-}
-
-export function normalizeStyleProfile(aesthetic: string, keywords: string[]) {
+export function normalizeStyleProfile(aesthetic: string, keywords: unknown) {
   const normalizedAesthetic = aesthetic.trim();
-  const normalizedKeywords = [...new Set(keywords.map((keyword) => keyword.trim()).filter(Boolean))];
+  const normalizedKeywords = coerceStyleTags(keywords);
   if (!normalizedAesthetic) throw new Error("Add an aesthetic label before confirming.");
-  if (normalizedKeywords.length === 0) throw new Error("Keep at least one style keyword before confirming.");
+  if (styleTagCount(normalizedKeywords) === 0) throw new Error("Keep at least one style tag before confirming.");
   return { aesthetic: normalizedAesthetic, keywords: normalizedKeywords };
 }
 
 export async function persistConfirmedStyleProfile(
   repository: StyleProfileRepository,
   aesthetic: string,
-  keywords: string[],
+  keywords: unknown,
 ) {
   const profile = normalizeStyleProfile(aesthetic, keywords);
   await repository.saveStyleProfile(profile.aesthetic, profile.keywords);
@@ -54,7 +37,7 @@ export async function persistConfirmedStyleProfile(
 export async function persistEditedStyleProfile(
   repository: StyleProfileRepository,
   aesthetic: string,
-  keywords: string[],
+  keywords: unknown,
 ) {
   const profile = normalizeStyleProfile(aesthetic, keywords);
   await repository.saveStyleProfile(profile.aesthetic, profile.keywords);
@@ -72,7 +55,7 @@ function createStyleProfileRepository(userId: string): StyleProfileRepository {
         .from("style_profiles")
         .upsert({
           user_id: userId,
-          aesthetic: [aesthetic],
+          aesthetic,
           keywords,
           confirmed_at: now,
           updated_at: now,
@@ -91,7 +74,7 @@ function createStyleProfileRepository(userId: string): StyleProfileRepository {
   };
 }
 
-export async function saveConfirmedStyleProfile(aesthetic: string, keywords: string[]) {
+export async function saveConfirmedStyleProfile(aesthetic: string, keywords: unknown) {
   if (!supabase) throw new Error("Supabase is not configured.");
   const { data: { user }, error } = await supabase.auth.getUser();
   if (error || !user) throw new Error(error?.message ?? "Sign in again to save your style profile.");
@@ -99,7 +82,7 @@ export async function saveConfirmedStyleProfile(aesthetic: string, keywords: str
   await persistConfirmedStyleProfile(createStyleProfileRepository(user.id), aesthetic, keywords);
 }
 
-export async function updateSavedStyleProfile(aesthetic: string, keywords: string[]) {
+export async function updateSavedStyleProfile(aesthetic: string, keywords: unknown) {
   if (!supabase) throw new Error("Supabase is not configured.");
   const { data: { user }, error } = await supabase.auth.getUser();
   if (error || !user) throw new Error(error?.message ?? "Sign in again to save your style profile.");
@@ -119,5 +102,9 @@ export async function getConfirmedStyleProfile(): Promise<ConfirmedStyleProfile 
     .maybeSingle();
   if (error) throw error;
   if (!data || !data.confirmed_at) return null;
-  return readConfirmedStyleProfile(data);
+  return {
+    aesthetic: aestheticTitle(data.aesthetic),
+    keywords: coerceStyleTags(data.keywords),
+    confirmed_at: data.confirmed_at,
+  };
 }
