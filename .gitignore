@@ -1,3 +1,9 @@
+# macOS
+.DS_Store
+
+# Local inspiration photos
+apps/desktop/samples/
+
 # Logs
 logs
 *.log

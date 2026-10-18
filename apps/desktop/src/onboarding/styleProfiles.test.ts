@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { normalizeStyleProfile, persistConfirmedStyleProfile, persistEditedStyleProfile, type StyleProfileRepository } from "./styleProfiles";
+import { normalizeStyleProfile, persistConfirmedStyleProfile, persistEditedStyleProfile, readConfirmedStyleProfile, type StyleProfileRepository } from "./styleProfiles";
 
 function repository(overrides: Partial<StyleProfileRepository> = {}) {
   return {
@@ -10,6 +10,18 @@ function repository(overrides: Partial<StyleProfileRepository> = {}) {
 }
 
 describe("confirmed style profile persistence", () => {
+  it("turns a saved aesthetic list into one phrase for the form", () => {
+    expect(readConfirmedStyleProfile({
+      aesthetic: ["minimalist streetwear", "androgynous tailoring"],
+      keywords: ["relaxed fit", "clean lines"],
+      confirmed_at: "2026-10-18T02:10:31.107+00:00",
+    })).toEqual({
+      aesthetic: "minimalist streetwear, androgynous tailoring",
+      keywords: ["relaxed fit", "clean lines"],
+      confirmed_at: "2026-10-18T02:10:31.107+00:00",
+    });
+  });
+
   it("trims the aesthetic and removes blank or duplicate keywords", () => {
     expect(normalizeStyleProfile("  Modern  ", ["Clean lines", "", "Clean lines", "Layered"])).toEqual({
       aesthetic: "Modern",

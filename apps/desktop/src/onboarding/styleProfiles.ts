@@ -11,6 +11,24 @@ export type StyleProfileRepository = {
   markOnboardingComplete: () => Promise<void>;
 };
 
+function textList(value: unknown) {
+  if (Array.isArray(value)) return value.filter((item): item is string => typeof item === "string");
+  if (typeof value === "string" && value.trim()) return [value];
+  return [];
+}
+
+export function readConfirmedStyleProfile(row: {
+  aesthetic: unknown;
+  keywords: unknown;
+  confirmed_at: string | null;
+}): ConfirmedStyleProfile {
+  return {
+    aesthetic: textList(row.aesthetic).join(", "),
+    keywords: textList(row.keywords).map((keyword) => keyword.trim()).filter(Boolean),
+    confirmed_at: row.confirmed_at,
+  };
+}
+
 export function normalizeStyleProfile(aesthetic: string, keywords: string[]) {
   const normalizedAesthetic = aesthetic.trim();
   const normalizedKeywords = [...new Set(keywords.map((keyword) => keyword.trim()).filter(Boolean))];
@@ -54,7 +72,7 @@ function createStyleProfileRepository(userId: string): StyleProfileRepository {
         .from("style_profiles")
         .upsert({
           user_id: userId,
-          aesthetic,
+          aesthetic: [aesthetic],
           keywords,
           confirmed_at: now,
           updated_at: now,
@@ -101,5 +119,5 @@ export async function getConfirmedStyleProfile(): Promise<ConfirmedStyleProfile 
     .maybeSingle();
   if (error) throw error;
   if (!data || !data.confirmed_at) return null;
-  return data;
+  return readConfirmedStyleProfile(data);
 }
