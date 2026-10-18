@@ -1,63 +1,54 @@
+import { mkdirSync } from "node:fs";
 import { resolve } from "node:path";
 import { fileURLToPath } from "node:url";
-import { build, defineConfig, type Plugin } from "vite";
+import { build as esbuild } from "esbuild";
+import { defineConfig, type Plugin } from "vite";
 import react from "@vitejs/plugin-react";
 
 const appRoot = fileURLToPath(new URL(".", import.meta.url));
 
-function emitServiceWorker(): Plugin {
-  let emitting = false;
+function stripCrossorigin(): Plugin {
+  return {
+    name: "strip-crossorigin",
+    enforce: "post",
+    generateBundle(_, bundle) {
+      for (const file of Object.values(bundle)) {
+        if (file.type !== "asset" || !file.fileName.endsWith(".html")) continue;
+        const html = typeof file.source === "string" ? file.source : new TextDecoder().decode(file.source);
+        file.source = html.replaceAll(" crossorigin", "");
+      }
+    },
+  };
+}
 
+function emitServiceWorker(): Plugin {
   return {
     name: "emit-service-worker",
     async closeBundle() {
-      if (emitting) return;
-      emitting = true;
-      try {
-        await build({
-          configFile: false,
-          root: appRoot,
-          logLevel: "warn",
-          build: {
-            emptyOutDir: false,
-            outDir: resolve(appRoot, "dist"),
-            lib: {
-              entry: resolve(appRoot, "src/background/service-worker.ts"),
-              formats: ["iife"],
-              name: "FitCheckBackground",
-              fileName: () => "background/service-worker.js",
-            },
-            rollupOptions: {
-              output: {
-                inlineDynamicImports: true,
-                extend: true,
-              },
-            },
-          },
-        });
-      } finally {
-        emitting = false;
-      }
+      const outfile = resolve(appRoot, "dist/background/service-worker.js");
+      mkdirSync(resolve(appRoot, "dist/background"), { recursive: true });
+      await esbuild({
+        entryPoints: [resolve(appRoot, "src/background/service-worker.ts")],
+        outfile,
+        bundle: true,
+        format: "esm",
+        platform: "browser",
+        target: "es2022",
+      });
     },
   };
 }
 
 export default defineConfig({
   root: appRoot,
-  plugins: [react(), emitServiceWorker()],
+  base: "./",
+  plugins: [react(), stripCrossorigin(), emitServiceWorker()],
   build: {
     outDir: resolve(appRoot, "dist"),
     emptyOutDir: true,
     modulePreload: false,
-    cssCodeSplit: false,
     rollupOptions: {
-      input: resolve(appRoot, "src/content/sidebar.tsx"),
-      output: {
-        format: "iife",
-        inlineDynamicImports: true,
-        entryFileNames: "content/sidebar.js",
-        assetFileNames: "assets/[name][extname]",
-      },
+      input: resolve(appRoot, "index.html"),
     },
   },
 });
