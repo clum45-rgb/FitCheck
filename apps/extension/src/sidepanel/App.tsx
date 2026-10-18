@@ -8,6 +8,7 @@ import { CartTab } from "./components/CartTab";
 import { CurrentPageCard } from "./components/CurrentPageCard";
 import { ErrorNotice } from "./components/ErrorNotice";
 import { Header } from "./components/Header";
+import { MatchThresholdSlider, MATCH_THRESHOLD_DEFAULT } from "./components/MatchThresholdSlider";
 import { ProductCard } from "./components/ProductCard";
 import { ProfileTab } from "./components/ProfileTab";
 import { RecommendationsEmptyState } from "./components/RecommendationsEmptyState";
@@ -119,14 +120,23 @@ function SignedInApp() {
   const [scanError, setScanError] = useState<string | null>(null);
   const [pageName, setPageName] = useState("This page");
   const [matches, setMatches] = useState<Match[]>([]);
+  const [matchThreshold, setMatchThreshold] = useState(MATCH_THRESHOLD_DEFAULT);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [approveNotice, setApproveNotice] = useState<string | null>(null);
   const productListRef = useRef<HTMLDivElement>(null);
+  const visibleMatches = matches.filter((match) => match.matchScore >= matchThreshold);
 
   useEffect(() => {
     const active = productListRef.current?.querySelector(".product-card-active");
     active?.scrollIntoView({ behavior: "smooth", block: "nearest" });
   }, [currentIndex]);
+
+  useEffect(() => {
+    setCurrentIndex((index) => {
+      if (visibleMatches.length === 0) return 0;
+      return Math.min(index, visibleMatches.length - 1);
+    });
+  }, [matchThreshold, visibleMatches.length]);
 
   async function handleScan() {
     if (!session) return;
@@ -164,9 +174,9 @@ function SignedInApp() {
   }
 
   function goToIndex(index: number) {
-    const clamped = Math.max(0, Math.min(matches.length - 1, index));
+    const clamped = Math.max(0, Math.min(visibleMatches.length - 1, index));
     setCurrentIndex(clamped);
-    const match = matches[clamped];
+    const match = visibleMatches[clamped];
     if (match) void navigateCurrentTab(match.url);
   }
 
@@ -186,7 +196,7 @@ function SignedInApp() {
       </div>
       <main>
         {tab === "scan" ? (
-          <div role="tabpanel" aria-label="Scan" className={matches.length > 0 ? "has-match-nav" : undefined}>
+          <div role="tabpanel" aria-label="Scan" className={visibleMatches.length > 0 ? "has-match-nav" : undefined}>
             <CurrentPageCard
               pageName={pageName}
               loading={scanning}
@@ -199,12 +209,19 @@ function SignedInApp() {
             {approveNotice ? (
               <ErrorNotice tone="info" message={approveNotice} onDismiss={() => setApproveNotice(null)} />
             ) : null}
-            {matches.length > 0 ? (
-              <>
-              <section className="card recommendations" aria-labelledby="recommendations-heading">
-                <h2 id="recommendations-heading">Matched pieces</h2>
+            <section className="card recommendations" aria-labelledby="recommendations-heading">
+              <div className="recommendations-sticky">
+                <h2 id="recommendations-heading">
+                  {matches.length > 0 ? "Matched pieces" : "Your next favorite find starts here."}
+                </h2>
+                {matches.length === 0 ? (
+                  <p className="muted">Scan a clothing page to discover pieces that match your style.</p>
+                ) : null}
+                <MatchThresholdSlider value={matchThreshold} onChange={setMatchThreshold} />
+              </div>
+              {matches.length > 0 ? (
                 <div className="product-list" ref={productListRef}>
-                  {matches.map((match, index) => (
+                  {visibleMatches.length > 0 ? visibleMatches.map((match, index) => (
                     <ProductCard
                       key={match.productId}
                       product={match}
@@ -218,9 +235,15 @@ function SignedInApp() {
                         void handleRemove(match);
                       }}
                     />
-                  ))}
+                  )) : (
+                    <p className="muted">No pieces meet this match threshold. Lower it to see more recommendations.</p>
+                  )}
                 </div>
-              </section>
+              ) : (
+                <RecommendationsEmptyState />
+              )}
+            </section>
+            {visibleMatches.length > 0 ? (
               <nav className="recommendations-nav" aria-label="Matched pieces">
                 <button
                   type="button"
@@ -231,21 +254,18 @@ function SignedInApp() {
                   Prev
                 </button>
                 <span className="recommendations-nav-count">
-                  {currentIndex + 1} of {matches.length}
+                  {currentIndex + 1} of {visibleMatches.length}
                 </span>
                 <button
                   type="button"
                   className="recommendations-nav-button"
-                  disabled={currentIndex === matches.length - 1}
+                  disabled={currentIndex === visibleMatches.length - 1}
                   onClick={() => goToIndex(currentIndex + 1)}
                 >
                   Next
                 </button>
               </nav>
-              </>
-            ) : (
-              <RecommendationsEmptyState />
-            )}
+            ) : null}
           </div>
         ) : tab === "profile" ? (
           <div role="tabpanel" aria-label="Profile">
