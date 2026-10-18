@@ -5,6 +5,7 @@ const scanApiUrl = `${backendOrigin}/api/scan`;
 const matchApiUrl = `${backendOrigin}/api/match`;
 const approveApiUrl = `${backendOrigin}/api/cart/approve`;
 const removeApiUrl = `${backendOrigin}/api/cart/remove`;
+const cartApiUrl = `${backendOrigin}/api/cart`;
 
 export type StoreScan = {
   storeDomain: string;
@@ -163,6 +164,7 @@ export async function approveMatch(accessToken: string, match: Match): Promise<v
           productId: match.productId,
           name: match.name,
           imageUrl: match.imageUrl,
+          price: match.price,
           url: match.url,
           storeDomain: match.storeDomain,
         },
@@ -197,6 +199,33 @@ export async function removeFromCart(accessToken: string, productId: string): Pr
   if (!response.ok) {
     throw new Error(body?.error ?? "This piece couldn't be removed from your cart.");
   }
+}
+
+type CartResponseBody = {
+  error?: string;
+  items?: CartItem[];
+};
+
+export async function fetchCart(accessToken: string): Promise<CartItem[]> {
+  let response: Response;
+  try {
+    response = await fetch(cartApiUrl, {
+      method: "GET",
+      headers: { Authorization: `Bearer ${accessToken}` },
+    });
+  } catch {
+    throw new Error("The cart server is unavailable. Start it and try again.");
+  }
+
+  const body = (await response.json().catch(() => null)) as CartResponseBody | null;
+  if (!response.ok) {
+    throw new Error(body?.error ?? "Your cart couldn't be loaded.");
+  }
+  if (!Array.isArray(body?.items)) {
+    throw new Error("The cart server returned an unexpected response.");
+  }
+
+  return body.items;
 }
 
 export async function navigateCurrentTab(url: string): Promise<void> {

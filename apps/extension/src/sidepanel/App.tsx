@@ -1,14 +1,10 @@
 import { useEffect, useRef, useState } from "react";
 import { useAuth } from "../auth/AuthProvider";
-import {
-  approveMatch,
-  fetchMatches,
-  navigateCurrentTab,
-  removeFromCart,
-  scanCurrentPage,
-} from "../lib/placeholderActions";
+import { CartProvider, useCart } from "../cart/CartContext";
+import { fetchMatches, navigateCurrentTab, scanCurrentPage } from "../lib/placeholderActions";
 import type { Match } from "../types";
 import { AuthScreen } from "./components/AuthScreen";
+import { CartTab } from "./components/CartTab";
 import { CurrentPageCard } from "./components/CurrentPageCard";
 import { ErrorNotice } from "./components/ErrorNotice";
 import { Header } from "./components/Header";
@@ -75,19 +71,23 @@ export function App() {
     );
   }
 
-  return <SignedInApp />;
+  return (
+    <CartProvider>
+      <SignedInApp />
+    </CartProvider>
+  );
 }
 
 function SignedInApp() {
   const { session } = useAuth();
-  const [tab, setTab] = useState<"scan" | "profile">("scan");
+  const { isApproved, approve, remove } = useCart();
+  const [tab, setTab] = useState<"scan" | "profile" | "cart">("scan");
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [scanning, setScanning] = useState(false);
   const [scanError, setScanError] = useState<string | null>(null);
   const [pageName, setPageName] = useState("This page");
   const [matches, setMatches] = useState<Match[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
-  const [approvedIds, setApprovedIds] = useState<Set<string>>(new Set());
   const [approveNotice, setApproveNotice] = useState<string | null>(null);
   const productListRef = useRef<HTMLDivElement>(null);
 
@@ -114,10 +114,8 @@ function SignedInApp() {
   }
 
   async function handleApprove(match: Match) {
-    if (!session) return;
     try {
-      await approveMatch(session.access_token, match);
-      setApprovedIds((prev) => new Set(prev).add(match.productId));
+      await approve(match);
       setApproveNotice(`Added "${match.name}" to your cart.`);
     } catch (error) {
       setScanError(error instanceof Error ? error.message : "This piece couldn't be added to your cart.");
@@ -125,14 +123,8 @@ function SignedInApp() {
   }
 
   async function handleRemove(match: Match) {
-    if (!session) return;
     try {
-      await removeFromCart(session.access_token, match.productId);
-      setApprovedIds((prev) => {
-        const next = new Set(prev);
-        next.delete(match.productId);
-        return next;
-      });
+      await remove(match.productId);
       setApproveNotice(`Removed "${match.name}" from your cart.`);
     } catch (error) {
       setScanError(error instanceof Error ? error.message : "This piece couldn't be removed from your cart.");
@@ -159,6 +151,9 @@ function SignedInApp() {
         </button>
         <button type="button" role="tab" aria-selected={tab === "profile"} onClick={() => setTab("profile")}>
           Profile
+        </button>
+        <button type="button" role="tab" aria-selected={tab === "cart"} onClick={() => setTab("cart")}>
+          Cart
         </button>
       </div>
       <main>
@@ -205,7 +200,7 @@ function SignedInApp() {
                     <ProductCard
                       key={match.productId}
                       product={match}
-                      approved={approvedIds.has(match.productId)}
+                      approved={isApproved(match.productId)}
                       highlighted={index === currentIndex}
                       onView={() => handleView(match)}
                       onApprove={() => {
@@ -222,9 +217,13 @@ function SignedInApp() {
               <RecommendationsEmptyState />
             )}
           </div>
-        ) : (
+        ) : tab === "profile" ? (
           <div role="tabpanel" aria-label="Profile">
             <ProfileTab />
+          </div>
+        ) : (
+          <div role="tabpanel" aria-label="Cart">
+            <CartTab />
           </div>
         )}
       </main>

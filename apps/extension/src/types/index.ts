@@ -22,6 +22,7 @@ export type CartItem = {
   productId: string;
   name: string;
   imageUrl: string;
+  price: string;
   url: string;
   storeDomain: string;
 };

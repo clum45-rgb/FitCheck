@@ -55,7 +55,7 @@ p {
   flex-direction: column;
   gap: 14px;
   width: 100%;
-  max-width: 400px;
+  max-width: 460px;
   min-height: 100vh;
   margin: 0 auto;
   padding: 16px;
@@ -499,7 +499,12 @@ legend {
   font-size: 22px;
 }
 
-.panel-tabs,
+.panel-tabs {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 6px;
+}
+
 .auth-tabs {
   display: grid;
   grid-template-columns: 1fr 1fr;

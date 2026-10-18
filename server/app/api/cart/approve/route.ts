@@ -7,12 +7,13 @@ type ApproveRequest = {
     productId?: string;
     name?: string;
     imageUrl?: string;
+    price?: string;
     url?: string;
     storeDomain?: string;
   };
 };
 
-const REQUIRED_FIELDS = ["productId", "name", "imageUrl", "url", "storeDomain"] as const;
+const REQUIRED_FIELDS = ["productId", "name", "imageUrl", "price", "url", "storeDomain"] as const;
 
 export async function POST(req: NextRequest) {
   const userId = await getUserIdFromRequest(req);
@@ -33,6 +34,7 @@ export async function POST(req: NextRequest) {
     productId: product!.productId!,
     name: product!.name!,
     imageUrl: product!.imageUrl!,
+    price: product!.price!,
     url: product!.url!,
     storeDomain: product!.storeDomain!,
   });
