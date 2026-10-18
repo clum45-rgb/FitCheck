@@ -268,7 +268,7 @@ export function HomeScreen({ onCompleteSetup }: HomeScreenProps) {
   return (
     <main className="progress-screen">
       <header className="app-header">
-        <div className="wordmark"><span className="wordmark-mark">F</span> FITSPO</div>
+        <div className="wordmark">FITSPO</div>
         <span className="app-header-label">STYLE PROFILE</span>
       </header>
       <section className="home-content">

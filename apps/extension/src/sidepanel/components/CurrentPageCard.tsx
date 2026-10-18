@@ -1,4 +1,3 @@
-import { ShoppingBag } from "lucide-react";
 import { ErrorNotice } from "./ErrorNotice";
 import { ScanButton } from "./ScanButton";
 
@@ -14,9 +13,6 @@ export function CurrentPageCard({ pageName, loading, errorMessage, onScan, onDis
   return (
     <section className="card" aria-labelledby="page-heading">
       <div className="page-context">
-        <span className="page-icon" aria-hidden="true">
-          <ShoppingBag size={18} />
-        </span>
         <div>
           <p className="eyebrow">Current page</p>
           <h2 id="page-heading">{pageName}</h2>

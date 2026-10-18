@@ -149,16 +149,16 @@ function SignedInApp() {
         <button type="button" role="tab" aria-selected={tab === "scan"} onClick={() => setTab("scan")}>
           Scan
         </button>
-        <button type="button" role="tab" aria-selected={tab === "profile"} onClick={() => setTab("profile")}>
-          Profile
-        </button>
         <button type="button" role="tab" aria-selected={tab === "cart"} onClick={() => setTab("cart")}>
           Cart
+        </button>
+        <button type="button" role="tab" aria-selected={tab === "profile"} onClick={() => setTab("profile")}>
+          Profile
         </button>
       </div>
       <main>
         {tab === "scan" ? (
-          <div role="tabpanel" aria-label="Scan">
+          <div role="tabpanel" aria-label="Scan" className={matches.length > 0 ? "has-match-nav" : undefined}>
             <CurrentPageCard
               pageName={pageName}
               loading={scanning}
@@ -172,29 +172,9 @@ function SignedInApp() {
               <ErrorNotice tone="info" message={approveNotice} onDismiss={() => setApproveNotice(null)} />
             ) : null}
             {matches.length > 0 ? (
+              <>
               <section className="card recommendations" aria-labelledby="recommendations-heading">
                 <h2 id="recommendations-heading">Matched pieces</h2>
-                <div className="recommendations-nav">
-                  <button
-                    type="button"
-                    className="button button-ghost button-inline"
-                    disabled={currentIndex === 0}
-                    onClick={() => goToIndex(currentIndex - 1)}
-                  >
-                    Previous
-                  </button>
-                  <span className="muted">
-                    {currentIndex + 1} of {matches.length}
-                  </span>
-                  <button
-                    type="button"
-                    className="button button-ghost button-inline"
-                    disabled={currentIndex === matches.length - 1}
-                    onClick={() => goToIndex(currentIndex + 1)}
-                  >
-                    Next
-                  </button>
-                </div>
                 <div className="product-list" ref={productListRef}>
                   {matches.map((match, index) => (
                     <ProductCard
@@ -213,6 +193,28 @@ function SignedInApp() {
                   ))}
                 </div>
               </section>
+              <nav className="recommendations-nav" aria-label="Matched pieces">
+                <button
+                  type="button"
+                  className="recommendations-nav-button"
+                  disabled={currentIndex === 0}
+                  onClick={() => goToIndex(currentIndex - 1)}
+                >
+                  Prev
+                </button>
+                <span className="recommendations-nav-count">
+                  {currentIndex + 1} of {matches.length}
+                </span>
+                <button
+                  type="button"
+                  className="recommendations-nav-button"
+                  disabled={currentIndex === matches.length - 1}
+                  onClick={() => goToIndex(currentIndex + 1)}
+                >
+                  Next
+                </button>
+              </nav>
+              </>
             ) : (
               <RecommendationsEmptyState />
             )}

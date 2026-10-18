@@ -32,19 +32,19 @@ export function ProductCard({
           ) : (
             <a href={product.url}>View piece</a>
           )}
-          {approved ? (
-            onRemove ? (
-              <button type="button" className="button button-ghost button-inline" onClick={onRemove}>
-                Remove
-              </button>
-            ) : null
-          ) : onApprove ? (
-            <button type="button" className="button button-primary button-inline" onClick={onApprove}>
-              Approve
-            </button>
-          ) : null}
         </div>
       </div>
+      {approved ? (
+        onRemove ? (
+          <button type="button" className="button button-ghost product-side-action" onClick={onRemove}>
+            Remove
+          </button>
+        ) : null
+      ) : onApprove ? (
+        <button type="button" className="button button-primary product-side-action" onClick={onApprove}>
+          Add to cart
+        </button>
+      ) : null}
     </article>
   );
 }

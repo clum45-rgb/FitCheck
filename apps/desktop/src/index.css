@@ -25,7 +25,6 @@ button:disabled { cursor: wait; opacity: .65; }
 .auth-story { position: relative; display: flex; min-height: 100vh; flex-direction: column; justify-content: space-between; overflow: hidden; padding: 38px 6vw 34px; background: #e9e1f1; color: #292432; }
 .auth-story .eyebrow { color: #554864; }
 .wordmark { display: flex; align-items: center; gap: 10px; font-size: 12px; font-weight: 750; letter-spacing: .14em; }
-.wordmark-mark { display: grid; width: 29px; aspect-ratio: 1; place-items: center; border-radius: 50%; background: var(--ink); color: var(--paper); font-family: Georgia, serif; font-size: 17px; font-weight: 400; letter-spacing: 0; }
 .story-copy { position: relative; z-index: 1; max-width: 630px; padding: 8vh 0; }
 .eyebrow { margin: 0 0 15px; color: var(--moss); font-size: 11px; font-weight: 750; letter-spacing: .13em; text-transform: uppercase; }
 .story-copy h1 { margin: 0; font-family: Georgia, "Times New Roman", serif; font-size: 76px; font-weight: 400; line-height: .99; }

@@ -247,7 +247,7 @@ export function OnboardingFlow({ isReplacement, onConfirmed }: OnboardingFlowPro
   return (
     <main className="progress-screen onboarding-screen">
       <header className="app-header">
-        <div className="wordmark"><span className="wordmark-mark">F</span> FITSPO</div>
+        <div className="wordmark">FITSPO</div>
         <span className="app-header-label">YOUR STYLE, IN FOCUS</span>
       </header>
 

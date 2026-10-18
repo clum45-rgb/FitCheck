@@ -49,7 +49,7 @@ export function AuthScreen({ signIn, signUp }: AuthScreenProps) {
   return (
     <main className="auth-layout">
       <section className="auth-story" aria-label="Fitspo introduction">
-        <div className="wordmark"><span className="wordmark-mark">F</span> FITSPO</div>
+        <div className="wordmark">FITSPO</div>
         <div className="story-copy">
           <p className="eyebrow">A better feel for your style</p>
           <h1>Find the pieces<br />that feel like <em>you.</em></h1>
