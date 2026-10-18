@@ -5,7 +5,11 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc --noEmit && vite build"
+    "build": "tsc --noEmit && vite build",
+    "check:style-profile": "node scripts/check-style-profile.ts",
+    "analyze:style": "node scripts/analyze-style.ts",
+    "list:style-photos": "node scripts/list-style-photos.ts",
+    "confirm:style": "node scripts/confirm-style.ts"
   },
   "dependencies": {
     "react": "^19.2.0",
