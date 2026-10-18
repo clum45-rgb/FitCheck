@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState, type FormEvent } from "react";
+import { useAuth } from "../auth/AuthProvider";
 import { PhotoLibrary } from "../onboarding/PhotoLibrary.tsx";
 import { analyzeStylePhotos } from "../onboarding/styleAnalysis";
 import { getUserPhotoMetadata } from "../onboarding/photoLibraryApi";
@@ -49,6 +50,8 @@ function analyzedPhotoPaths(signature: string | null): string[] | null {
 }
 
 export function HomeScreen({ onCompleteSetup }: HomeScreenProps) {
+  const { session } = useAuth();
+  const email = session?.user.email ?? "";
   const [styleProfile, setStyleProfile] = useState<ConfirmedStyleProfile | null>(null);
   const [tagEditorOpen, setTagEditorOpen] = useState(false);
   const [draftKeywords, setDraftKeywords] = useState<ProfileTags | null>(null);
@@ -266,10 +269,10 @@ export function HomeScreen({ onCompleteSetup }: HomeScreenProps) {
   );
 
   return (
-    <main className="progress-screen">
+    <main className="progress-screen profile-screen">
       <header className="app-header">
         <div className="wordmark">FITSPO</div>
-        <span className="app-header-label">STYLE PROFILE</span>
+        {email && <span className="app-header-label app-header-email">{email}</span>}
       </header>
       <section className="home-content">
         <div className="profile-title-row">

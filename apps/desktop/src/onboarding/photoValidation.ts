@@ -1,4 +1,4 @@
-export const MAX_PHOTO_COUNT = 10;
+export const MAX_PHOTO_COUNT = 9;
 export const MAX_PHOTO_SIZE_BYTES = 5 * 1024 * 1024;
 
 const imageFormats = {

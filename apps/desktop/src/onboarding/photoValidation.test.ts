@@ -20,21 +20,21 @@ describe("inspiration photo validation", () => {
     expect(await detectImageType(spoof)).toBeNull();
   });
 
-  it("rejects oversized files and stops at the ten-photo limit", async () => {
+  it("rejects oversized files and stops at the nine-photo limit", async () => {
     const oversized = new File([new Uint8Array(MAX_PHOTO_SIZE_BYTES + 1).buffer], "large.png", { type: "image/png" });
-    const tenPhotos = Array.from({ length: MAX_PHOTO_COUNT + 1 }, (_, index) => photo(validPngBytes, `${index}.png`, "image/png"));
+    const extraPhotos = Array.from({ length: MAX_PHOTO_COUNT + 1 }, (_, index) => photo(validPngBytes, `${index}.png`, "image/png"));
 
     const sizeResult = await validatePhotoFiles([oversized]);
-    const countResult = await validatePhotoFiles(tenPhotos);
+    const countResult = await validatePhotoFiles(extraPhotos);
 
     expect(sizeResult.validFiles).toHaveLength(0);
     expect(sizeResult.errors[0]).toContain("5 MB");
     expect(countResult.validFiles).toHaveLength(MAX_PHOTO_COUNT);
-    expect(countResult.errors[0]).toContain("up to 10");
+    expect(countResult.errors[0]).toContain("up to 9");
 
-    const sevenSavedResult = await validatePhotoFiles(tenPhotos, 7);
-    const nineSavedResult = await validatePhotoFiles(tenPhotos, 9);
-    expect(sevenSavedResult.validFiles).toHaveLength(3);
-    expect(nineSavedResult.validFiles).toHaveLength(1);
+    const sevenSavedResult = await validatePhotoFiles(extraPhotos, 7);
+    const nineSavedResult = await validatePhotoFiles(extraPhotos, 9);
+    expect(sevenSavedResult.validFiles).toHaveLength(2);
+    expect(nineSavedResult.validFiles).toHaveLength(0);
   });
 });

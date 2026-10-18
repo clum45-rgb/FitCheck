@@ -19,7 +19,7 @@ function makeRepository(overrides: Partial<PhotoUploadRepository> = {}) {
 }
 
 describe("per-file photo uploads", () => {
-  it("allows only three more photos when seven are already saved", async () => {
+  it("allows only two more photos when seven are already saved", async () => {
     let count = 7;
     const repository = makeRepository({
       getPhotoCount: vi.fn(async () => count),
@@ -28,15 +28,15 @@ describe("per-file photo uploads", () => {
 
     const result = await uploadPhotoFiles(repository, "user-123", makePhotos(5));
 
-    expect(result.saved).toHaveLength(3);
-    expect(result.failed).toHaveLength(2);
+    expect(result.saved).toHaveLength(2);
+    expect(result.failed).toHaveLength(3);
     expect(result.failed[0].message).toContain("collection is full");
-    expect(repository.getPhotoCount).toHaveBeenCalledTimes(4);
+    expect(repository.getPhotoCount).toHaveBeenCalledTimes(3);
     expect(result.saved.every(({ storagePath }) => storagePath.startsWith("user-123/"))).toBe(true);
   });
 
-  it("does not upload when the persisted collection already has ten photos", async () => {
-    const repository = makeRepository({ getPhotoCount: vi.fn(async () => 10) });
+  it("does not upload when the persisted collection already has nine photos", async () => {
+    const repository = makeRepository({ getPhotoCount: vi.fn(async () => 9) });
 
     const result = await uploadPhotoFiles(repository, "user-123", makePhotos(1));
 
@@ -45,8 +45,8 @@ describe("per-file photo uploads", () => {
     expect(repository.uploadObject).not.toHaveBeenCalled();
   });
 
-  it("allows one photo at nine saved and records the exact owner and uploaded path", async () => {
-    let count = 9;
+  it("allows one photo at eight saved and records the exact owner and uploaded path", async () => {
+    let count = 8;
     const uploadedPaths: string[] = [];
     const repository = makeRepository({
       getPhotoCount: vi.fn(async () => count),

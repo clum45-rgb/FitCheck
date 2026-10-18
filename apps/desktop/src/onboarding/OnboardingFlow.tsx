@@ -120,8 +120,6 @@ export function OnboardingFlow({ isReplacement, onConfirmed }: OnboardingFlowPro
   }
 
   async function removeSavedPhoto(photo: UserPhoto) {
-    const name = photo.storage_path.split("/").at(-1) ?? "this photo";
-    if (!window.confirm(`Permanently remove ${name} from your inspiration photos?`)) return;
     setDeletingPhotoId(photo.id);
     setError(null);
     try {
@@ -256,7 +254,7 @@ export function OnboardingFlow({ isReplacement, onConfirmed }: OnboardingFlowPro
           <div className="flow-heading">
             <p className="eyebrow">Step 01 / 02 · Inspiration</p>
             <h1>Show us what feels like you.</h1>
-            <p>Choose up to 10 images. A moodboard, a saved look, a detail you keep coming back to: it all counts.</p>
+            <p>Choose up to 9 images. A moodboard, a saved look, a detail you keep coming back to: it all counts.</p>
           </div>
 
           <div className="upload-toolbar">
