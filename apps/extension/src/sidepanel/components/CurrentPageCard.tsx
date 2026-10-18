@@ -3,13 +3,14 @@ import { ErrorNotice } from "./ErrorNotice";
 import { ScanButton } from "./ScanButton";
 
 type CurrentPageCardProps = {
+  pageName: string;
   loading: boolean;
   errorMessage: string | null;
   onScan: () => void;
   onDismissError: () => void;
 };
 
-export function CurrentPageCard({ loading, errorMessage, onScan, onDismissError }: CurrentPageCardProps) {
+export function CurrentPageCard({ pageName, loading, errorMessage, onScan, onDismissError }: CurrentPageCardProps) {
   return (
     <section className="card" aria-labelledby="page-heading">
       <div className="page-context">
@@ -18,7 +19,7 @@ export function CurrentPageCard({ loading, errorMessage, onScan, onDismissError 
         </span>
         <div>
           <p className="eyebrow">Current page</p>
-          <h2 id="page-heading">Uniqlo</h2>
+          <h2 id="page-heading">{pageName}</h2>
         </div>
       </div>
       <p className="muted">

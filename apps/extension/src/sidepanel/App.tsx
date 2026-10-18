@@ -1,8 +1,9 @@
 import { useState } from "react";
 import { scanCurrentPage } from "../lib/placeholderActions";
-import type { StyleProfile } from "../types";
+import type { ProductCardData, StyleProfile } from "../types";
 import { CurrentPageCard } from "./components/CurrentPageCard";
 import { Header } from "./components/Header";
+import { ProductCard } from "./components/ProductCard";
 import { ProfileSummary } from "./components/ProfileSummary";
 import { RecommendationsEmptyState } from "./components/RecommendationsEmptyState";
 import { SettingsPanel } from "./components/SettingsPanel";
@@ -14,23 +15,24 @@ const initialProfile: StyleProfile = {
   fit: "Oversized",
 };
 
-const scanUnavailableMessage =
-  "Page scanning isn't available yet. This feature will be connected in a future update.";
-
 export function App() {
   const [profile, setProfile] = useState<StyleProfile>(initialProfile);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [editingStyle, setEditingStyle] = useState(false);
   const [scanning, setScanning] = useState(false);
   const [scanError, setScanError] = useState<string | null>(null);
+  const [pageName, setPageName] = useState("This page");
+  const [products, setProducts] = useState<ProductCardData[]>([]);
 
   async function handleScan() {
     setScanning(true);
     setScanError(null);
     try {
-      await scanCurrentPage();
-    } catch {
-      setScanError(scanUnavailableMessage);
+      const scan = await scanCurrentPage();
+      setPageName(scan.storeDomain);
+      setProducts(scan.products);
+    } catch (error) {
+      setScanError(error instanceof Error ? error.message : "This page couldn't be scanned.");
     } finally {
       setScanning(false);
     }
@@ -42,6 +44,7 @@ export function App() {
       <main>
         <ProfileSummary profile={profile} onEdit={() => setEditingStyle(true)} />
         <CurrentPageCard
+          pageName={pageName}
           loading={scanning}
           errorMessage={scanError}
           onScan={() => {
@@ -49,7 +52,18 @@ export function App() {
           }}
           onDismissError={() => setScanError(null)}
         />
-        <RecommendationsEmptyState />
+        {products.length > 0 ? (
+          <section className="card recommendations" aria-labelledby="recommendations-heading">
+            <h2 id="recommendations-heading">Scanned pieces</h2>
+            <div className="product-list">
+              {products.map((product) => (
+                <ProductCard key={`${product.url}-${product.name}`} product={product} />
+              ))}
+            </div>
+          </section>
+        ) : (
+          <RecommendationsEmptyState />
+        )}
       </main>
       {settingsOpen ? (
         <SettingsPanel

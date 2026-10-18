@@ -3,7 +3,8 @@
   "name": "FitFinder",
   "version": "0.1.0",
   "description": "Discover clothing that matches your style while you browse.",
-  "permissions": ["sidePanel"],
+  "permissions": ["sidePanel", "tabs"],
+  "host_permissions": ["http://localhost:3000/*"],
   "action": {
     "default_title": "FitFinder"
   },

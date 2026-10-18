@@ -274,6 +274,12 @@ main {
   line-height: 1.2;
 }
 
+.product-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
 .card-hints {
   display: grid;
   grid-template-columns: 1fr 1fr;

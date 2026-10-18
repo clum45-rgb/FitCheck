@@ -6,6 +6,9 @@ import { tagProducts } from "@/lib/llmTag";
 import { getCachedTags, saveProducts } from "@/lib/cache";
 import type { ScanRequest, TaggedProduct } from "@/lib/types";
 
+// Temporary stand-in until the recommender selects matches. Remove this cap then.
+const SCAN_PRODUCT_LIMIT = 10;
+
 export async function POST(req: NextRequest) {
   const body = (await req.json().catch(() => null)) as ScanRequest | null;
   const origin = body?.origin;
@@ -20,7 +23,7 @@ export async function POST(req: NextRequest) {
   const storeDomain = new URL(origin).hostname;
 
   try {
-    const rawProducts = await fetchAllProducts(origin);
+    const rawProducts = await fetchAllProducts(origin, SCAN_PRODUCT_LIMIT);
     const products = rawProducts.map((raw) => normalizeProduct(raw, storeDomain));
 
     const cachedTags = await getCachedTags(storeDomain, products);

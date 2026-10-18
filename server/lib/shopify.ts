@@ -59,15 +59,16 @@ async function fetchPage(url: string): Promise<Response> {
   throw new ShopifyFetchError("not a supported Shopify store");
 }
 
-export async function fetchAllProducts(origin: string): Promise<ShopifyRawProduct[]> {
+export async function fetchAllProducts(origin: string, limit?: number): Promise<ShopifyRawProduct[]> {
   const products: ShopifyRawProduct[] = [];
+  const pageSize = limit === undefined ? PAGE_LIMIT : Math.min(PAGE_LIMIT, limit);
 
   for (let page = 1; page <= MAX_PAGES; page++) {
     if (page > 1) {
       await sleep(REQUEST_DELAY_MS);
     }
 
-    const url = `${origin}/products.json?limit=${PAGE_LIMIT}&page=${page}`;
+    const url = `${origin}/products.json?limit=${pageSize}&page=${page}`;
     const res = await fetchPage(url);
 
     if (!res.ok) {
@@ -96,7 +97,11 @@ export async function fetchAllProducts(origin: string): Promise<ShopifyRawProduc
     }
 
     products.push(...(pageProducts as ShopifyRawProduct[]));
+
+    if (limit !== undefined && products.length >= limit) {
+      return products.slice(0, limit);
+    }
   }
 
-  return products;
+  return limit === undefined ? products : products.slice(0, limit);
 }
