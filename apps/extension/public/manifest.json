@@ -1,6 +1,6 @@
 {
   "manifest_version": 3,
-  "name": "FitFinder",
+  "name": "Fitspo",
   "version": "0.1.0",
   "description": "Discover clothing that matches your style while you browse.",
   "permissions": ["sidePanel", "tabs", "storage"],
@@ -9,7 +9,7 @@
     "https://tnqhogpdhwcxbacypubv.supabase.co/*"
   ],
   "action": {
-    "default_title": "FitFinder"
+    "default_title": "Fitspo"
   },
   "side_panel": {
     "default_path": "index.html"

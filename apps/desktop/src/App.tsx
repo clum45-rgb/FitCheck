@@ -12,14 +12,14 @@ export function App() {
     return (
       <main className="message-screen">
         <p className="eyebrow">Setup required</p>
-        <h1>Connect FitCheck to Supabase</h1>
+        <h1>Connect Fitspo to Supabase</h1>
         <p>Add <code>VITE_SUPABASE_URL</code> and <code>VITE_SUPABASE_PUBLISHABLE_KEY</code> to <code>apps/desktop/.env.local</code>, then restart the dev server.</p>
       </main>
     );
   }
 
   if (loading) {
-    return <main className="message-screen" role="status">Loading your FitCheck profile...</main>;
+    return <main className="message-screen" role="status">Loading your Fitspo profile...</main>;
   }
 
   if (profileError) {

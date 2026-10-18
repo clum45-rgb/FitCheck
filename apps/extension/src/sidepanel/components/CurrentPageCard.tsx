@@ -23,7 +23,7 @@ export function CurrentPageCard({ pageName, loading, errorMessage, onScan, onDis
         </div>
       </div>
       <p className="muted">
-        FitFinder will analyze the clothing on this page and look for pieces that match your style.
+        Fitspo will analyze the clothing on this page and look for pieces that match your style.
       </p>
       <ScanButton loading={loading} onScan={onScan} />
       {errorMessage ? (

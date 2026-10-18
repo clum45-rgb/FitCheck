@@ -12,7 +12,7 @@ export function Header({ onOpenSettings }: HeaderProps) {
           <Shirt size={18} />
         </span>
         <div>
-          <h1>FitFinder</h1>
+          <h1>Fitspo</h1>
           <p className="prototype">Prototype</p>
         </div>
       </div>

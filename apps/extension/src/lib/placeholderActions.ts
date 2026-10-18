@@ -63,23 +63,23 @@ export async function scanCurrentPage(): Promise<StoreScan> {
 
 async function currentStoreOrigin() {
   if (typeof chrome === "undefined" || !chrome.tabs?.query) {
-    throw new Error("FitFinder can only scan from the Chrome side panel.");
+    throw new Error("Fitspo can only scan from the Chrome side panel.");
   }
 
   const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
   if (!tab?.url) {
-    throw new Error("FitFinder can't read this page. Open a store tab and try again.");
+    throw new Error("Fitspo can't read this page. Open a store tab and try again.");
   }
 
   let pageUrl: URL;
   try {
     pageUrl = new URL(tab.url);
   } catch {
-    throw new Error("FitFinder can only scan http and https stores.");
+    throw new Error("Fitspo can only scan http and https stores.");
   }
 
   if (pageUrl.protocol !== "http:" && pageUrl.protocol !== "https:") {
-    throw new Error("FitFinder can only scan http and https stores.");
+    throw new Error("Fitspo can only scan http and https stores.");
   }
 
   return pageUrl.origin;
@@ -230,12 +230,12 @@ export async function fetchCart(accessToken: string): Promise<CartItem[]> {
 
 export async function navigateCurrentTab(url: string): Promise<void> {
   if (typeof chrome === "undefined" || !chrome.tabs?.query || !chrome.tabs.update) {
-    throw new Error("FitFinder can only navigate from the Chrome side panel.");
+    throw new Error("Fitspo can only navigate from the Chrome side panel.");
   }
 
   const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
   if (!tab?.id) {
-    throw new Error("FitFinder can't find the current tab.");
+    throw new Error("Fitspo can't find the current tab.");
   }
 
   await chrome.tabs.update(tab.id, { url });

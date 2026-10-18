@@ -52,7 +52,7 @@ export function ProfileTab() {
       <section className="card" aria-labelledby="photos-heading">
         <div className="section-heading">
           <h2 id="photos-heading">Inspiration photos</h2>
-          <button type="button" className="icon-button" onClick={() => void openWebApp()} aria-label="Edit inspiration photos on FitCheck">
+          <button type="button" className="icon-button" onClick={() => void openWebApp()} aria-label="Edit inspiration photos on Fitspo">
             <Pencil size={16} aria-hidden="true" />
           </button>
         </div>
@@ -63,7 +63,7 @@ export function ProfileTab() {
             ))}
           </div>
         ) : (
-          <p className="muted">No inspiration photos yet. Add them on the FitCheck website.</p>
+          <p className="muted">No inspiration photos yet. Add them on the Fitspo website.</p>
         )}
       </section>
     </>

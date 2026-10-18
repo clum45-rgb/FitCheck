@@ -48,8 +48,8 @@ export function AuthScreen({ signIn, signUp }: AuthScreenProps) {
 
   return (
     <main className="auth-layout">
-      <section className="auth-story" aria-label="FitCheck introduction">
-        <div className="wordmark"><span className="wordmark-mark">F</span> FITCHECK</div>
+      <section className="auth-story" aria-label="Fitspo introduction">
+        <div className="wordmark"><span className="wordmark-mark">F</span> FITSPO</div>
         <div className="story-copy">
           <p className="eyebrow">A better feel for your style</p>
           <h1>Find the pieces<br />that feel like <em>you.</em></h1>
@@ -62,7 +62,7 @@ export function AuthScreen({ signIn, signUp }: AuthScreenProps) {
         <div className="auth-box">
           <div className="auth-heading">
             <p className="eyebrow">{mode === "signup" ? "A few things first" : "Welcome back"}</p>
-            <h2>{mode === "signup" ? "Create your account" : "Sign in to FitCheck"}</h2>
+            <h2>{mode === "signup" ? "Create your account" : "Sign in to Fitspo"}</h2>
           </div>
 
           <div className="auth-tabs" role="tablist" aria-label="Authentication">
@@ -92,7 +92,7 @@ export function AuthScreen({ signIn, signUp }: AuthScreenProps) {
               {!pending && <span aria-hidden="true">↗</span>}
             </button>
           </form>
-          <p className="auth-legal">By continuing, you agree to create a FitCheck account for your personal style profile.</p>
+          <p className="auth-legal">By continuing, you agree to create a Fitspo account for your personal style profile.</p>
         </div>
       </section>
     </main>

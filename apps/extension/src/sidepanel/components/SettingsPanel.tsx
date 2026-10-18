@@ -49,12 +49,12 @@ export function SettingsPanel({ onClose }: SettingsPanelProps) {
             onClick={() => setShowAbout((current) => !current)}
           >
             <Info size={16} aria-hidden="true" />
-            About FitFinder
+            About Fitspo
           </button>
         </div>
         {showAbout ? (
           <p className="about">
-            FitFinder finds clothes that match your saved style while you browse. Style and photo changes happen on the FitCheck website.
+            Fitspo finds clothes that match your saved style while you browse. Style and photo changes happen on the Fitspo website.
           </p>
         ) : null}
       </div>

@@ -47,7 +47,7 @@ export function AuthScreen({ signIn, signUp }: AuthScreenProps) {
       <section className="card auth-card">
         <div>
           <p className="eyebrow">{mode === "signup" ? "A few things first" : "Welcome back"}</p>
-          <h2>{mode === "signup" ? "Create your account" : "Sign in to FitFinder"}</h2>
+          <h2>{mode === "signup" ? "Create your account" : "Sign in to Fitspo"}</h2>
         </div>
         <div className="auth-tabs" role="tablist" aria-label="Authentication">
           <button type="button" role="tab" aria-selected={mode === "login"} onClick={() => changeMode("login")}>
@@ -85,7 +85,7 @@ export function AuthScreen({ signIn, signUp }: AuthScreenProps) {
             {pending ? "Please wait..." : mode === "signup" ? "Create account" : "Sign in"}
           </button>
         </form>
-        <p className="muted">Use the same FitCheck account you created on the website.</p>
+        <p className="muted">Use the same Fitspo account you created on the website.</p>
       </section>
     </main>
   );

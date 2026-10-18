@@ -23,7 +23,7 @@ export function App() {
         <main>
           <section className="card">
             <p className="eyebrow">Setup required</p>
-            <h2>Connect FitFinder to your account</h2>
+            <h2>Connect Fitspo to your account</h2>
             <p className="muted">
               Add the Supabase URL and publishable key in the desktop env file, then rebuild the extension.
             </p>
@@ -145,7 +145,7 @@ function SignedInApp() {
   return (
     <div className="app">
       <Header onOpenSettings={() => setSettingsOpen(true)} />
-      <div className="panel-tabs" role="tablist" aria-label="FitFinder">
+      <div className="panel-tabs" role="tablist" aria-label="Fitspo">
         <button type="button" role="tab" aria-selected={tab === "scan"} onClick={() => setTab("scan")}>
           Scan
         </button>

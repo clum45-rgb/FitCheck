@@ -12,7 +12,7 @@ export function ProfileSummary({ aesthetic, tags, onEdit }: ProfileSummaryProps)
     <section className="card" aria-labelledby="style-heading">
       <div className="section-heading">
         <h2 id="style-heading">Your style</h2>
-        <button type="button" className="icon-button" onClick={onEdit} aria-label="Edit style on FitCheck">
+        <button type="button" className="icon-button" onClick={onEdit} aria-label="Edit style on Fitspo">
           <Pencil size={16} aria-hidden="true" />
         </button>
       </div>
@@ -31,7 +31,7 @@ export function ProfileSummary({ aesthetic, tags, onEdit }: ProfileSummaryProps)
           ) : null}
         </>
       ) : (
-        <p className="muted">No saved style yet. Edit it on the FitCheck website.</p>
+        <p className="muted">No saved style yet. Edit it on the Fitspo website.</p>
       )}
     </section>
   );

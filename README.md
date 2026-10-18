@@ -1,4 +1,4 @@
-# FitCheck
+# Fitspo
 DubHacks'26 project
 
 npm workspace with two apps:
