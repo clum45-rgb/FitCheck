@@ -34,6 +34,8 @@ export type StyleTags = {
   aesthetic: Aesthetic[];
 };
 
+export type ProfileTags = Record<StyleTagField, string[]>;
+
 export const STYLE_TAG_VOCAB = VOCAB;
 
 export type StyleProfile = {
@@ -48,6 +50,9 @@ export type StyleProfile = {
 
 const MAX_ITEMS = 12;
 const MAX_ITEM_LENGTH = 80;
+export const MAX_AESTHETIC_LENGTH = 20;
+export const MAX_PROFILE_TAGS_PER_CATEGORY = 5;
+export const MAX_PROFILE_TAG_LENGTH = 30;
 
 const stringListSchema = {
   type: "array",
@@ -57,6 +62,7 @@ const stringListSchema = {
 function enumArray(values: readonly string[]) {
   return {
     type: "array" as const,
+    maxItems: MAX_PROFILE_TAGS_PER_CATEGORY,
     items: { type: "string" as const, enum: [...values] },
   };
 }
@@ -79,7 +85,7 @@ export const styleProfileSchema = {
   additionalProperties: false,
   required: ["aesthetic", "keywords", ...STYLE_PROFILE_LIST_FIELDS, "status"],
   properties: {
-    aesthetic: { type: "string" },
+    aesthetic: { type: "string", maxLength: MAX_AESTHETIC_LENGTH },
     keywords: styleTagSchema,
     colors: stringListSchema,
     silhouettes: stringListSchema,
@@ -95,6 +101,58 @@ export type StyleProfileParseResult =
 
 export function emptyStyleTags(): StyleTags {
   return { category: [], fit: [], color: [], material: [], aesthetic: [] };
+}
+
+export function emptyProfileTags(): ProfileTags {
+  return { category: [], fit: [], color: [], material: [], aesthetic: [] };
+}
+
+export function normalizeProfileTagKey(value: string) {
+  return value.normalize("NFKC").trim().replace(/\s+/g, " ").toLowerCase();
+}
+
+export function coerceProfileTags(value: unknown): ProfileTags {
+  if (value === null || typeof value !== "object" || Array.isArray(value)) return emptyProfileTags();
+  const record = value as Record<string, unknown>;
+  const tags = emptyProfileTags();
+  for (const field of STYLE_TAG_FIELDS) {
+    if (!Array.isArray(record[field])) continue;
+    for (const item of record[field] as unknown[]) {
+      if (typeof item !== "string") continue;
+      const trimmed = item.trim();
+      if (!trimmed || trimmed.length > MAX_PROFILE_TAG_LENGTH) continue;
+      if (tags[field].some((existing) => normalizeProfileTagKey(existing) === normalizeProfileTagKey(trimmed))) continue;
+      if (tags[field].length >= MAX_PROFILE_TAGS_PER_CATEGORY) continue;
+      tags[field].push(trimmed);
+    }
+  }
+  return tags;
+}
+
+export type AddProfileTagResult =
+  | { tags: ProfileTags; error: null }
+  | { tags: ProfileTags; error: string };
+
+export function addProfileTag(tags: ProfileTags, field: StyleTagField, rawValue: string): AddProfileTagResult {
+  const value = rawValue.trim();
+  if (!value) return { tags, error: "Enter a tag first." };
+  if (value.length > MAX_PROFILE_TAG_LENGTH) return { tags, error: `Tags can be at most ${MAX_PROFILE_TAG_LENGTH} characters.` };
+  if (tags[field].some((existing) => normalizeProfileTagKey(existing) === normalizeProfileTagKey(value))) {
+    return { tags, error: "That tag is already in this category." };
+  }
+  if (tags[field].length >= MAX_PROFILE_TAGS_PER_CATEGORY) {
+    return { tags, error: `Keep no more than ${MAX_PROFILE_TAGS_PER_CATEGORY} tags in each category.` };
+  }
+  return { tags: { ...tags, [field]: [...tags[field], value] }, error: null };
+}
+
+export function withoutProfileTag(tags: ProfileTags, field: StyleTagField, value: string): ProfileTags {
+  const key = normalizeProfileTagKey(value);
+  return { ...tags, [field]: tags[field].filter((item) => normalizeProfileTagKey(item) !== key) };
+}
+
+export function profileTagCount(tags: ProfileTags) {
+  return STYLE_TAG_FIELDS.reduce((count, field) => count + tags[field].length, 0);
 }
 
 export function styleTagCount(tags: StyleTags) {
@@ -141,6 +199,10 @@ function parseTagList(value: unknown, field: StyleTagField, errors: string[], st
   if (!Array.isArray(value)) {
     if (strict) errors.push(`keywords.${field} must be a list of text`);
     return [];
+  }
+
+  if (strict && value.length > MAX_PROFILE_TAGS_PER_CATEGORY) {
+    errors.push(`keywords.${field} must contain at most ${MAX_PROFILE_TAGS_PER_CATEGORY} tags`);
   }
 
   const allowed = new Set<string>(VOCAB[field]);
@@ -238,8 +300,8 @@ function parseAestheticTitle(value: unknown, errors: string[]): string {
   }
 
   const trimmed = value.trim();
-  if (trimmed.length < 1 || trimmed.length > MAX_ITEM_LENGTH) {
-    errors.push(`aesthetic must be 1 to ${MAX_ITEM_LENGTH} characters`);
+  if (trimmed.length < 1 || trimmed.length > MAX_AESTHETIC_LENGTH) {
+    errors.push(`aesthetic must be 1 to ${MAX_AESTHETIC_LENGTH} characters`);
   }
   return trimmed;
 }
@@ -252,6 +314,19 @@ export function aestheticTitle(value: unknown): string {
     .map((item) => item.trim())
     .filter(Boolean)
     .join(" ");
+}
+
+export function limitAestheticTitle(value: unknown): string {
+  const title = aestheticTitle(value).replace(/\s+/g, " ").trim();
+  if (title.length <= MAX_AESTHETIC_LENGTH) return title;
+  const words = title.split(" ");
+  let limited = "";
+  for (const word of words) {
+    const candidate = limited ? `${limited} ${word}` : word;
+    if (candidate.length > MAX_AESTHETIC_LENGTH) break;
+    limited = candidate;
+  }
+  return limited || title.slice(0, MAX_AESTHETIC_LENGTH);
 }
 
 export function styleTagVocabularyText() {

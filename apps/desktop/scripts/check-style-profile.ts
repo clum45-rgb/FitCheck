@@ -3,13 +3,13 @@ import { styleAnalysisPrompt } from "../src/style-prompt.ts";
 import { STYLE_PROFILE_LIST_FIELDS, parseStyleProfile, type StyleProfile } from "../src/style-profile.ts";
 
 const validProfile: StyleProfile = {
-  aesthetic: "Minimal casual workwear",
+  aesthetic: "Minimal workwear",
   keywords: {
     category: ["shirt", "pants"],
     fit: ["relaxed", "boxy"],
     color: ["grey", "beige"],
     material: ["cotton"],
-    aesthetic: ["minimal", "casual", "workwear"],
+    aesthetic: ["minimal", "workwear"],
   },
   colors: ["charcoal", "cream", "black"],
   silhouettes: ["boxy", "loose", "wide-leg"],
@@ -21,18 +21,18 @@ const validProfile: StyleProfile = {
 const valid = parseStyleProfile(validProfile);
 assert.equal(valid.ok, true);
 if (valid.ok) {
-  assert.equal(valid.profile.aesthetic, "Minimal casual workwear");
+  assert.equal(valid.profile.aesthetic, "Minimal workwear");
   assert.deepEqual(valid.profile.colors, ["charcoal", "cream", "black"]);
   assert.deepEqual(valid.profile.keywords.fit, ["relaxed", "boxy"]);
 }
 
 const trimmedTitle = parseStyleProfile({
   ...validProfile,
-  aesthetic: "  Minimal casual workwear  ",
+  aesthetic: "  Minimal workwear  ",
 });
 assert.equal(trimmedTitle.ok, true);
 if (trimmedTitle.ok) {
-  assert.equal(trimmedTitle.profile.aesthetic, "Minimal casual workwear");
+  assert.equal(trimmedTitle.profile.aesthetic, "Minimal workwear");
 }
 
 const aestheticList = parseStyleProfile({
@@ -56,7 +56,7 @@ if (trimmed.ok) {
 }
 
 const missingStatus = parseStyleProfile({
-  aesthetic: "Minimal casual workwear",
+  aesthetic: "Minimal workwear",
   keywords: validProfile.keywords,
   colors: ["black"],
   silhouettes: ["boxy"],
@@ -95,6 +95,6 @@ for (const field of STYLE_PROFILE_LIST_FIELDS) {
 assert.ok(styleAnalysisPrompt.includes("pending_review"));
 assert.ok(styleAnalysisPrompt.includes("empty array"));
 assert.ok(styleAnalysisPrompt.includes("category: t-shirt"));
-assert.ok(styleAnalysisPrompt.includes("Minimal casual workwear"));
+assert.ok(styleAnalysisPrompt.includes("Minimal workwear"));
 
 console.log("style profile checks passed");

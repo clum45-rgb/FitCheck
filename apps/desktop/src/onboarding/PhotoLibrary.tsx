@@ -224,7 +224,6 @@ export function PhotoLibrary({ compact = false }: PhotoLibraryProps) {
           </>
         ) : <p className="limit-message" role="status">Your photo collection is full. Remove a photo to add another.</p>}
         {selected.length > 0 && <button type="button" className="primary-button" disabled={!countIsCurrent || uploading || validating || loading} onClick={() => void uploadSelected()}>{uploading ? "Saving photos..." : validating ? "Checking photos..." : `Upload ${selected.length} photo${selected.length === 1 ? "" : "s"}`}<span aria-hidden="true">↗</span></button>}
-        {!loading && <button type="button" className="text-button" disabled={uploading || deletingId !== null} onClick={() => void refresh()}>Refresh photos</button>}
       </div>
     </section>
   );

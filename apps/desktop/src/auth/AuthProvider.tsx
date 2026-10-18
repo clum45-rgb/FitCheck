@@ -29,6 +29,7 @@ type AuthContextValue = {
   profileError: string | null;
   signIn: (email: string, password: string) => Promise<AuthActionResult>;
   signUp: (displayName: string, email: string, password: string) => Promise<AuthActionResult>;
+  updateDisplayName: (displayName: string) => Promise<void>;
   refreshProfile: () => Promise<void>;
 };
 
@@ -155,6 +156,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     };
   }, []);
 
+  const updateDisplayName = useCallback(async (displayName: string) => {
+    if (!supabase || !session) throw new Error("Sign in again to update your profile.");
+    const normalizedName = displayName.trim() || null;
+    const { error } = await supabase
+      .from("profiles")
+      .update({ display_name: normalizedName, updated_at: new Date().toISOString() })
+      .eq("id", session.user.id)
+      .select("id")
+      .single();
+    if (error) throw error;
+    setProfile((current) => current ? { ...current, display_name: normalizedName } : current);
+  }, [session]);
+
   const refreshProfile = useCallback(async () => {
     if (!session) return;
     setLoading(true);
@@ -176,8 +190,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     profileError,
     signIn,
     signUp,
+    updateDisplayName,
     refreshProfile,
-  }), [session, profile, loading, profileError, signIn, signUp, refreshProfile]);
+  }), [session, profile, loading, profileError, signIn, signUp, updateDisplayName, refreshProfile]);
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }

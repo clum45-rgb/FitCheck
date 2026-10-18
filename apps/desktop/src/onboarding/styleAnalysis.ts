@@ -1,5 +1,10 @@
 import { supabase } from "../lib/supabase";
-import { coerceStyleTags, type StyleTags } from "../style-profile";
+import { coerceStyleTags, type ProfileTags, type StyleTags } from "../style-profile";
+
+export type ProfileAnalysisContext = {
+  aesthetic: string;
+  keywords: ProfileTags;
+};
 
 export type StyleAnalysis = {
   aesthetic: string;
@@ -7,7 +12,7 @@ export type StyleAnalysis = {
   isMock: false;
 };
 
-export async function analyzeStylePhotos(storagePaths: string[]): Promise<StyleAnalysis> {
+export async function analyzeStylePhotos(storagePaths: string[], context?: ProfileAnalysisContext): Promise<StyleAnalysis> {
   if (storagePaths.length === 0) throw new Error("Upload inspiration photos before analysis.");
   if (!supabase) throw new Error("Supabase is not configured.");
 
@@ -20,7 +25,7 @@ export async function analyzeStylePhotos(storagePaths: string[]): Promise<StyleA
       Authorization: `Bearer ${session.access_token}`,
       "Content-Type": "application/json",
     },
-    body: JSON.stringify({ storagePaths }),
+    body: JSON.stringify({ storagePaths, context }),
   });
   const body = (await response.json().catch(() => null)) as {
     error?: string;
