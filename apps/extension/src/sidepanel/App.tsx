@@ -7,22 +7,15 @@ import {
   removeFromCart,
   scanCurrentPage,
 } from "../lib/placeholderActions";
-import type { Match, StyleProfile } from "../types";
+import type { Match } from "../types";
 import { AuthScreen } from "./components/AuthScreen";
 import { CurrentPageCard } from "./components/CurrentPageCard";
 import { ErrorNotice } from "./components/ErrorNotice";
 import { Header } from "./components/Header";
 import { ProductCard } from "./components/ProductCard";
-import { ProfileSummary } from "./components/ProfileSummary";
+import { ProfileTab } from "./components/ProfileTab";
 import { RecommendationsEmptyState } from "./components/RecommendationsEmptyState";
 import { SettingsPanel } from "./components/SettingsPanel";
-import { StylePreferencesModal } from "./components/StylePreferencesModal";
-
-const initialProfile: StyleProfile = {
-  aesthetics: ["Minimalist", "Streetwear"],
-  colors: ["Black", "White", "Grey"],
-  fit: "Oversized",
-};
 
 export function App() {
   const { configured, session, loading, profileError, signIn, signUp, refreshProfile } = useAuth();
@@ -87,9 +80,8 @@ export function App() {
 
 function SignedInApp() {
   const { session } = useAuth();
-  const [profile, setProfile] = useState<StyleProfile>(initialProfile);
+  const [tab, setTab] = useState<"scan" | "profile">("scan");
   const [settingsOpen, setSettingsOpen] = useState(false);
-  const [editingStyle, setEditingStyle] = useState(false);
   const [scanning, setScanning] = useState(false);
   const [scanError, setScanError] = useState<string | null>(null);
   const [pageName, setPageName] = useState("This page");
@@ -161,85 +153,82 @@ function SignedInApp() {
   return (
     <div className="app">
       <Header onOpenSettings={() => setSettingsOpen(true)} />
+      <div className="panel-tabs" role="tablist" aria-label="FitFinder">
+        <button type="button" role="tab" aria-selected={tab === "scan"} onClick={() => setTab("scan")}>
+          Scan
+        </button>
+        <button type="button" role="tab" aria-selected={tab === "profile"} onClick={() => setTab("profile")}>
+          Profile
+        </button>
+      </div>
       <main>
-        <ProfileSummary profile={profile} onEdit={() => setEditingStyle(true)} />
-        <CurrentPageCard
-          pageName={pageName}
-          loading={scanning}
-          errorMessage={scanError}
-          onScan={() => {
-            void handleScan();
-          }}
-          onDismissError={() => setScanError(null)}
-        />
-        {approveNotice ? (
-          <ErrorNotice tone="info" message={approveNotice} onDismiss={() => setApproveNotice(null)} />
-        ) : null}
-        {matches.length > 0 ? (
-          <section className="card recommendations" aria-labelledby="recommendations-heading">
-            <h2 id="recommendations-heading">Matched pieces</h2>
-            <div className="recommendations-nav">
-              <button
-                type="button"
-                className="button button-ghost button-inline"
-                disabled={currentIndex === 0}
-                onClick={() => goToIndex(currentIndex - 1)}
-              >
-                Previous
-              </button>
-              <span className="muted">
-                {currentIndex + 1} of {matches.length}
-              </span>
-              <button
-                type="button"
-                className="button button-ghost button-inline"
-                disabled={currentIndex === matches.length - 1}
-                onClick={() => goToIndex(currentIndex + 1)}
-              >
-                Next
-              </button>
-            </div>
-            <div className="product-list" ref={productListRef}>
-              {matches.map((match, index) => (
-                <ProductCard
-                  key={match.productId}
-                  product={match}
-                  approved={approvedIds.has(match.productId)}
-                  highlighted={index === currentIndex}
-                  onView={() => handleView(match)}
-                  onApprove={() => {
-                    void handleApprove(match);
-                  }}
-                  onRemove={() => {
-                    void handleRemove(match);
-                  }}
-                />
-              ))}
-            </div>
-          </section>
+        {tab === "scan" ? (
+          <div role="tabpanel" aria-label="Scan">
+            <CurrentPageCard
+              pageName={pageName}
+              loading={scanning}
+              errorMessage={scanError}
+              onScan={() => {
+                void handleScan();
+              }}
+              onDismissError={() => setScanError(null)}
+            />
+            {approveNotice ? (
+              <ErrorNotice tone="info" message={approveNotice} onDismiss={() => setApproveNotice(null)} />
+            ) : null}
+            {matches.length > 0 ? (
+              <section className="card recommendations" aria-labelledby="recommendations-heading">
+                <h2 id="recommendations-heading">Matched pieces</h2>
+                <div className="recommendations-nav">
+                  <button
+                    type="button"
+                    className="button button-ghost button-inline"
+                    disabled={currentIndex === 0}
+                    onClick={() => goToIndex(currentIndex - 1)}
+                  >
+                    Previous
+                  </button>
+                  <span className="muted">
+                    {currentIndex + 1} of {matches.length}
+                  </span>
+                  <button
+                    type="button"
+                    className="button button-ghost button-inline"
+                    disabled={currentIndex === matches.length - 1}
+                    onClick={() => goToIndex(currentIndex + 1)}
+                  >
+                    Next
+                  </button>
+                </div>
+                <div className="product-list" ref={productListRef}>
+                  {matches.map((match, index) => (
+                    <ProductCard
+                      key={match.productId}
+                      product={match}
+                      approved={approvedIds.has(match.productId)}
+                      highlighted={index === currentIndex}
+                      onView={() => handleView(match)}
+                      onApprove={() => {
+                        void handleApprove(match);
+                      }}
+                      onRemove={() => {
+                        void handleRemove(match);
+                      }}
+                    />
+                  ))}
+                </div>
+              </section>
+            ) : (
+              <RecommendationsEmptyState />
+            )}
+          </div>
         ) : (
-          <RecommendationsEmptyState />
+          <div role="tabpanel" aria-label="Profile">
+            <ProfileTab />
+          </div>
         )}
       </main>
-      {settingsOpen ? (
-        <SettingsPanel
-          onClose={() => setSettingsOpen(false)}
-          onEditStyle={() => {
-            setSettingsOpen(false);
-            setEditingStyle(true);
-          }}
-        />
-      ) : null}
-      {editingStyle ? (
-        <StylePreferencesModal
-          profile={profile}
-          onClose={() => setEditingStyle(false)}
-          onSave={(nextProfile) => {
-            setProfile(nextProfile);
-            setEditingStyle(false);
-          }}
-        />
-      ) : null}
+      {settingsOpen ? <SettingsPanel onClose={() => setSettingsOpen(false)} /> : null}
     </div>
   );
 }

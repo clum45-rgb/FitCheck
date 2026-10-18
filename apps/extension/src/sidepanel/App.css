@@ -61,7 +61,8 @@ p {
   padding: 16px;
 }
 
-main {
+main,
+[role="tabpanel"] {
   display: flex;
   flex-direction: column;
   gap: 12px;
@@ -179,6 +180,25 @@ main {
   margin: 0;
 }
 
+.style-title {
+  font-family: "Iowan Old Style", Palatino, "Palatino Linotype", Georgia, serif;
+  font-size: 22px;
+}
+
+.photo-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.photo-grid img {
+  width: 100%;
+  aspect-ratio: 3 / 4;
+  object-fit: cover;
+  border-radius: 10px;
+  background: #f3eee8;
+}
+
 .text-button {
   border: 0;
   padding: 0;
@@ -287,10 +307,13 @@ main {
 }
 
 .card-hint {
+  display: grid;
+  place-items: center;
   height: 72px;
   border: 1px dashed #d9d1ea;
   border-radius: 12px;
   background: linear-gradient(180deg, #f7f4fb 0%, #fffcf9 100%);
+  color: #8d7eb3;
 }
 
 .product-card {
@@ -476,12 +499,14 @@ legend {
   font-size: 22px;
 }
 
+.panel-tabs,
 .auth-tabs {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 6px;
 }
 
+.panel-tabs button,
 .auth-tabs button {
   min-height: 36px;
   border: 1px solid #e4ddd6;
@@ -490,6 +515,7 @@ legend {
   color: #1c1917;
 }
 
+.panel-tabs button[aria-selected="true"],
 .auth-tabs button[aria-selected="true"] {
   border-color: #5b4b8a;
   background: #efeaf8;

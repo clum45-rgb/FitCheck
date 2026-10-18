@@ -1,22 +1,15 @@
 import { useEffect, useId, useRef, useState } from "react";
-import { Images, Info, SlidersHorizontal, UserRound, X } from "lucide-react";
-import { useAuth } from "../../auth/AuthProvider";
-import { uploadInspirationPhotos } from "../../lib/placeholderActions";
-import { ErrorNotice } from "./ErrorNotice";
+import { Info, UserRound, X } from "lucide-react";
+import { openWebApp } from "../../lib/webApp";
 
 type SettingsPanelProps = {
   onClose: () => void;
-  onEditStyle: () => void;
 };
 
-export function SettingsPanel({ onClose, onEditStyle }: SettingsPanelProps) {
-  const { session, signOut } = useAuth();
+export function SettingsPanel({ onClose }: SettingsPanelProps) {
   const dialogRef = useRef<HTMLDialogElement>(null);
   const titleId = useId();
-  const [notice, setNotice] = useState<string | null>(null);
   const [showAbout, setShowAbout] = useState(false);
-  const [showAccount, setShowAccount] = useState(false);
-  const [pending, setPending] = useState(false);
 
   useEffect(() => {
     const dialog = dialogRef.current;
@@ -24,31 +17,9 @@ export function SettingsPanel({ onClose, onEditStyle }: SettingsPanelProps) {
     dialog.showModal();
   }, []);
 
-  async function handlePhotos() {
-    setShowAbout(false);
-    setNotice(null);
-    setPending(true);
-    try {
-      await uploadInspirationPhotos();
-    } catch (error) {
-      const message = error instanceof Error ? error.message : "Photo uploads aren't available yet.";
-      setNotice(message);
-    } finally {
-      setPending(false);
-    }
-  }
-
-  async function handleSignOut() {
-    setNotice(null);
-    setPending(true);
-    try {
-      const result = await signOut();
-      if (result.error) setNotice(result.error);
-    } catch (error) {
-      setNotice(error instanceof Error ? error.message : "Sign out failed. Try again.");
-    } finally {
-      setPending(false);
-    }
+  function openAccount() {
+    onClose();
+    void openWebApp();
   }
 
   return (
@@ -67,25 +38,7 @@ export function SettingsPanel({ onClose, onEditStyle }: SettingsPanelProps) {
           </button>
         </div>
         <div className="settings-list">
-          <button type="button" className="settings-row" onClick={onEditStyle}>
-            <SlidersHorizontal size={16} aria-hidden="true" />
-            Edit style preferences
-          </button>
-          <button type="button" className="settings-row" onClick={handlePhotos} disabled={pending}>
-            <Images size={16} aria-hidden="true" />
-            Manage inspiration photos
-          </button>
-          <button
-            type="button"
-            className="settings-row"
-            aria-expanded={showAccount}
-            onClick={() => {
-              setNotice(null);
-              setShowAbout(false);
-              setShowAccount((current) => !current);
-            }}
-            disabled={pending}
-          >
+          <button type="button" className="settings-row" onClick={openAccount}>
             <UserRound size={16} aria-hidden="true" />
             Account settings
           </button>
@@ -93,29 +46,17 @@ export function SettingsPanel({ onClose, onEditStyle }: SettingsPanelProps) {
             type="button"
             className="settings-row"
             aria-expanded={showAbout}
-            onClick={() => {
-              setNotice(null);
-              setShowAbout((current) => !current);
-            }}
+            onClick={() => setShowAbout((current) => !current)}
           >
             <Info size={16} aria-hidden="true" />
             About FitFinder
           </button>
         </div>
-        {showAccount ? (
-          <div className="account-panel">
-            <p className="muted">Signed in as {session?.user.email ?? "your FitCheck account"}.</p>
-            <button className="button button-ghost" type="button" onClick={() => void handleSignOut()} disabled={pending}>
-              {pending ? "Signing out..." : "Sign out"}
-            </button>
-          </div>
-        ) : null}
         {showAbout ? (
           <p className="about">
-            FitFinder finds clothes that match your saved style while you browse. Photo uploads are not connected yet.
+            FitFinder finds clothes that match your saved style while you browse. Style and photo changes happen on the FitCheck website.
           </p>
         ) : null}
-        {notice ? <ErrorNotice message={notice} onDismiss={() => setNotice(null)} /> : null}
       </div>
     </dialog>
   );
