@@ -1,12 +1,16 @@
 import { useState } from "react";
 import { AuthScreen } from "./auth/AuthScreen";
 import { useAuth } from "./auth/AuthProvider";
+import { AppNav, type AppTab } from "./components/AppNav";
+import { BrandLogo } from "./components/BrandLogo";
 import { OnboardingFlow } from "./onboarding/OnboardingFlow";
+import { CartScreen } from "./pages/CartScreen";
 import { HomeScreen } from "./pages/HomeScreen";
 
 export function App() {
   const { configured, session, profile, loading, profileError, signIn, signUp, refreshProfile } = useAuth();
   const [showOnboarding, setShowOnboarding] = useState(false);
+  const [tab, setTab] = useState<AppTab>("cart");
 
   if (!configured) {
     return (
@@ -47,7 +51,22 @@ export function App() {
     );
   }
 
+  const email = session.user.email ?? "";
+
   return (
-    <HomeScreen onCompleteSetup={() => setShowOnboarding(true)} />
+    <main className="progress-screen profile-screen">
+      <header className="app-header">
+        <BrandLogo />
+        <div className="app-header-end">
+          <AppNav active={tab} onChange={setTab} />
+          {email ? <span className="app-header-label app-header-email">{email}</span> : null}
+        </div>
+      </header>
+      {tab === "cart" ? (
+        <CartScreen accessToken={session.access_token} />
+      ) : (
+        <HomeScreen onCompleteSetup={() => setShowOnboarding(true)} />
+      )}
+    </main>
   );
 }

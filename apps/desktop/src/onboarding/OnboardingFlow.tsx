@@ -2,6 +2,7 @@ import { useEffect, useRef, useState, type ChangeEvent } from "react";
 import { MAX_PHOTO_COUNT, validatePhotoFiles } from "./photoValidation";
 import { uploadInspirationPhotos, type PhotoUploadProgress } from "./photoStorage";
 import { analyzeStylePhotos, type StyleAnalysis } from "./styleAnalysis";
+import { BrandLogo } from "../components/BrandLogo";
 import { StyleTagList } from "./StyleTagList";
 import {
   emptyProfilePreferenceState,
@@ -245,7 +246,7 @@ export function OnboardingFlow({ isReplacement, onConfirmed }: OnboardingFlowPro
   return (
     <main className="progress-screen onboarding-screen">
       <header className="app-header">
-        <div className="wordmark">FITSPO</div>
+        <BrandLogo />
         <span className="app-header-label">YOUR STYLE, IN FOCUS</span>
       </header>
 

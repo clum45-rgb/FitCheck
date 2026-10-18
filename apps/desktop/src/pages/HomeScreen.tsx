@@ -1,5 +1,4 @@
 import { useCallback, useEffect, useRef, useState, type FormEvent } from "react";
-import { useAuth } from "../auth/AuthProvider";
 import { PhotoLibrary } from "../onboarding/PhotoLibrary.tsx";
 import { analyzeStylePhotos } from "../onboarding/styleAnalysis";
 import { getUserPhotoMetadata } from "../onboarding/photoLibraryApi";
@@ -50,8 +49,6 @@ function analyzedPhotoPaths(signature: string | null): string[] | null {
 }
 
 export function HomeScreen({ onCompleteSetup }: HomeScreenProps) {
-  const { session } = useAuth();
-  const email = session?.user.email ?? "";
   const [styleProfile, setStyleProfile] = useState<ConfirmedStyleProfile | null>(null);
   const [tagEditorOpen, setTagEditorOpen] = useState(false);
   const [draftKeywords, setDraftKeywords] = useState<ProfileTags | null>(null);
@@ -269,100 +266,94 @@ export function HomeScreen({ onCompleteSetup }: HomeScreenProps) {
   );
 
   return (
-    <main className="progress-screen profile-screen">
-      <header className="app-header">
-        <div className="wordmark">FITSPO</div>
-        {email && <span className="app-header-label app-header-email">{email}</span>}
-      </header>
-      <section className="home-content">
-        <div className="profile-title-row">
-          <div>
-            <p className="eyebrow">YOUR STYLE, IN FOCUS</p>
-            <h1>Your Style Profile</h1>
-          </div>
+    <section className="home-content" aria-labelledby="profile-heading">
+      <div className="profile-title-row">
+        <div>
+          <p className="eyebrow">YOUR STYLE, IN FOCUS</p>
+          <h1 id="profile-heading">Your Style Profile</h1>
         </div>
+      </div>
 
-        <div className="profile-layout">
+      <div className="profile-layout">
         <div className="profile-main">
-        {loading ? <p className="flow-status" role="status">Loading your saved style profile...</p> : error ? (
-          <div className="home-error"><p role="alert">{error}</p><button className="text-button" type="button" onClick={() => void loadStyleProfile()}>Try again</button></div>
-        ) : styleProfile ? (
-          <section className="saved-style" aria-label="Confirmed style profile">
-            <p className="eyebrow">Aesthetic</p>
-            <div className="aesthetic-box">
-              <h2>{styleProfile.aesthetic}</h2>
-            </div>
-            <div className="style-tags">
-              <div className="keyword-title saved-keyword-title style-tags-heading">
-                <span>Style tags</span>
-                <button className="secondary-button profile-action" type="button" onClick={openTagEditor}>Edit tags <span aria-hidden="true"><svg viewBox="0 0 24 24" width="15" height="15"><path fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" d="M12 20h9M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z" /></svg></span></button>
+          {loading ? <p className="flow-status" role="status">Loading your saved style profile...</p> : error ? (
+            <div className="home-error"><p role="alert">{error}</p><button className="text-button" type="button" onClick={() => void loadStyleProfile()}>Try again</button></div>
+          ) : styleProfile ? (
+            <section className="saved-style" aria-label="Confirmed style profile">
+              <p className="eyebrow">Aesthetic</p>
+              <div className="aesthetic-box">
+                <h2>{styleProfile.aesthetic}</h2>
               </div>
-              <StyleTagList tags={styleProfile.keywords} />
-            </div>
-          </section>
-        ) : (
-          <section className="profile-empty">
-            <p className="eyebrow">No confirmed style yet</p>
-            <h2>Start with the looks you love.</h2>
-            <p>Complete the inspiration flow to save your aesthetic and style tags here.</p>
-            <button className="primary-button" type="button" onClick={onCompleteSetup}>Continue setup <span aria-hidden="true">↗</span></button>
-          </section>
-        )}
+              <div className="style-tags">
+                <div className="keyword-title saved-keyword-title style-tags-heading">
+                  <span>Style tags</span>
+                  <button className="secondary-button profile-action" type="button" onClick={openTagEditor}>Edit tags <span aria-hidden="true"><svg viewBox="0 0 24 24" width="15" height="15"><path fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" d="M12 20h9M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z" /></svg></span></button>
+                </div>
+                <StyleTagList tags={styleProfile.keywords} />
+              </div>
+            </section>
+          ) : (
+            <section className="profile-empty">
+              <p className="eyebrow">No confirmed style yet</p>
+              <h2>Start with the looks you love.</h2>
+              <p>Complete the inspiration flow to save your aesthetic and style tags here.</p>
+              <button className="primary-button" type="button" onClick={onCompleteSetup}>Continue setup <span aria-hidden="true">↗</span></button>
+            </section>
+          )}
 
-        <div className="refresh-preferences refresh-preferences-after-photos">
-          <div>
-            <h2>Reanalyze Profile</h2>
-            <p>Reanalyze your current saved inspiration photos to update the AI-generated aesthetic and tags.</p>
+          <div className="refresh-preferences refresh-preferences-after-photos">
+            <div>
+              <h2>Reanalyze Profile</h2>
+              <p>Reanalyze your current saved inspiration photos to update the AI-generated aesthetic and tags.</p>
+            </div>
+            {refreshNotice && <p className="flow-status" role="status">{refreshNotice}</p>}
+            {refreshError && <p className="flow-error" role="alert">{refreshError}</p>}
+            <button type="button" className={`secondary-button profile-action${photosChanged ? "" : " is-idle"}${refreshing ? " is-reanalyzing" : ""}`} disabled={!photosChanged || !styleProfile || loading || saving || refreshing} onClick={() => void startRefresh()}>
+              {refreshing ? <span className="button-spinner" role="status" aria-label="Reanalyzing profile" /> : "Reanalyze Profile"}
+            </button>
           </div>
-          {refreshNotice && <p className="flow-status" role="status">{refreshNotice}</p>}
-          {refreshError && <p className="flow-error" role="alert">{refreshError}</p>}
-          <button type="button" className={`secondary-button profile-action${photosChanged ? "" : " is-idle"}${refreshing ? " is-reanalyzing" : ""}`} disabled={!photosChanged || !styleProfile || loading || saving || refreshing} onClick={() => void startRefresh()}>
-            {refreshing ? <span className="button-spinner" role="status" aria-label="Reanalyzing profile" /> : "Reanalyze Profile"}
-          </button>
-        </div>
         </div>
         <PhotoLibrary compact onPhotosChange={handlePhotosChange} />
-        </div>
-        {tagEditorOpen && styleProfile && draftKeywords && (
-          <div className="tag-modal-backdrop" onClick={(event) => { if (event.target === event.currentTarget) cancelTagEditor(); }}>
-            <div className="tag-modal" role="dialog" aria-modal="true" aria-labelledby="tag-editor-title">
-              <h2 id="tag-editor-title">Edit tags</h2>
-              {saveError && <p className="flow-error" role="alert">{saveError}</p>}
-              <div className="style-tags">
-                <StyleTagList tags={draftKeywords} disabled={saving} onRemove={removeDraftTag} onRequestAdd={openAddTag} />
-              </div>
-              {confirmLeave ? (
-                <div className="tag-leave-prompt" role="group" aria-label="Leave without saving?">
-                  <p>Leave without saving?</p>
-                  <div className="tag-modal-actions">
-                    <button type="button" className="text-button" onClick={() => setConfirmLeave(false)}>No</button>
-                    <button type="button" className="tag-modal-save" onClick={discardTagEditor}>Yes</button>
-                  </div>
-                </div>
-              ) : (
-                <div className="tag-modal-actions">
-                  <button type="button" className="text-button" disabled={saving} onClick={cancelTagEditor}>Cancel</button>
-                  <button type="button" className="tag-modal-save" disabled={!tagsChanged || saving} onClick={() => void saveTagChanges()}>{saving ? "Saving..." : "Save"}</button>
-                </div>
-              )}
-              {addingField && (
-                <div className="tag-add-backdrop" onClick={(event) => { if (event.target === event.currentTarget) setAddingField(null); }}>
-                  <form className="tag-add-popup" onSubmit={submitAddTag}>
-                    <h3>Add a {styleTagFieldLabels[addingField].toLowerCase()} tag</h3>
-                    <label className="visually-hidden" htmlFor="custom-tag-input">Custom {styleTagFieldLabels[addingField].toLowerCase()} tag</label>
-                    <input id="custom-tag-input" autoFocus value={addValue} maxLength={MAX_PROFILE_TAG_LENGTH} placeholder={`Type a ${styleTagFieldLabels[addingField].toLowerCase()}`} onChange={(event) => setAddValue(event.target.value)} />
-                    {addError && <p className="flow-error" role="alert">{addError}</p>}
-                    <div className="tag-modal-actions">
-                      <button type="button" className="text-button" onClick={() => setAddingField(null)}>Cancel</button>
-                      <button type="submit" className="tag-modal-save" disabled={addValue.trim().length === 0}>Add</button>
-                    </div>
-                  </form>
-                </div>
-              )}
+      </div>
+      {tagEditorOpen && styleProfile && draftKeywords && (
+        <div className="tag-modal-backdrop" onClick={(event) => { if (event.target === event.currentTarget) cancelTagEditor(); }}>
+          <div className="tag-modal" role="dialog" aria-modal="true" aria-labelledby="tag-editor-title">
+            <h2 id="tag-editor-title">Edit tags</h2>
+            {saveError && <p className="flow-error" role="alert">{saveError}</p>}
+            <div className="style-tags">
+              <StyleTagList tags={draftKeywords} disabled={saving} onRemove={removeDraftTag} onRequestAdd={openAddTag} />
             </div>
+            {confirmLeave ? (
+              <div className="tag-leave-prompt" role="group" aria-label="Leave without saving?">
+                <p>Leave without saving?</p>
+                <div className="tag-modal-actions">
+                  <button type="button" className="text-button" onClick={() => setConfirmLeave(false)}>No</button>
+                  <button type="button" className="tag-modal-save" onClick={discardTagEditor}>Yes</button>
+                </div>
+              </div>
+            ) : (
+              <div className="tag-modal-actions">
+                <button type="button" className="text-button" disabled={saving} onClick={cancelTagEditor}>Cancel</button>
+                <button type="button" className="tag-modal-save" disabled={!tagsChanged || saving} onClick={() => void saveTagChanges()}>{saving ? "Saving..." : "Save"}</button>
+              </div>
+            )}
+            {addingField && (
+              <div className="tag-add-backdrop" onClick={(event) => { if (event.target === event.currentTarget) setAddingField(null); }}>
+                <form className="tag-add-popup" onSubmit={submitAddTag}>
+                  <h3>Add a {styleTagFieldLabels[addingField].toLowerCase()} tag</h3>
+                  <label className="visually-hidden" htmlFor="custom-tag-input">Custom {styleTagFieldLabels[addingField].toLowerCase()} tag</label>
+                  <input id="custom-tag-input" autoFocus value={addValue} maxLength={MAX_PROFILE_TAG_LENGTH} placeholder={`Type a ${styleTagFieldLabels[addingField].toLowerCase()}`} onChange={(event) => setAddValue(event.target.value)} />
+                  {addError && <p className="flow-error" role="alert">{addError}</p>}
+                  <div className="tag-modal-actions">
+                    <button type="button" className="text-button" onClick={() => setAddingField(null)}>Cancel</button>
+                    <button type="submit" className="tag-modal-save" disabled={addValue.trim().length === 0}>Add</button>
+                  </div>
+                </form>
+              </div>
+            )}
           </div>
-        )}
-      </section>
-    </main>
+        </div>
+      )}
+    </section>
   );
 }

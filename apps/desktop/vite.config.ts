@@ -58,5 +58,12 @@ export default defineConfig({
     fs: {
       allow: ["../.."],
     },
+    // Forward cart routes to the Next.js scan/match/cart server during local dev.
+    proxy: {
+      "/api/cart": {
+        target: "http://localhost:3000",
+        changeOrigin: true,
+      },
+    },
   },
 });
